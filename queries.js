@@ -97,7 +97,37 @@ const adminCreateEmployee = (req, res) => {
   });
 };
 
+// employee login
+const employeeLogin = (req, res) => {
+  pool.query('SELECT password,id FROM employees WHERE email = $1', [req.body.email], (error, result) => {
+    // error handling
+    queryError(error, 500, res);
+    // verify password
+    bcrypt.compare(req.body.password, result.rows[0].password).then(
+      (status) => {
+        if (!status) {
+          return res.status(301).send({
+            status: 'error',
+            error: 'employee password mismatch',
+          });
+        }
+        // sign jw token
+        const token = jwt.sign({ employeeId: result.rows[0].id }, 'SECRET', { expiresIn: '24h' });
+
+        return res.status(200).send({
+          status: 'success',
+          data: token,
+        });
+      },
+    ).catch((error1) => res.status(500).send({
+      status: 'error',
+      error: error1,
+    }));
+  });
+};
+
 module.exports = {
   adminLogin,
   adminCreateEmployee,
+  employeeLogin,
 };

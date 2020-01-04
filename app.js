@@ -13,8 +13,6 @@ const db = require('./queries');
 // verify employee Authentication
 const employeeAuth = require('./auth.employee');
 
-// multer for file handling
-
 // configure & instantiate multer
 const storage = multer.memoryStorage();
 const multerGifHandling = multer({ storage }).single('gif');
@@ -42,6 +40,9 @@ app.post('/teamwork/v1/admin/login', db.adminLogin);
 
 // admin create employee
 app.post('/teamwork/v1/admin/employees', db.adminCreateEmployee);
+
+// employee sign in
+app.post('/teamwork/v1/employees/login', db.employeeLogin);
 
 // export the app
 module.exports = app;
