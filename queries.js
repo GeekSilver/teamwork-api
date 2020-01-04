@@ -290,6 +290,22 @@ const employeeDeleteGif = (req, res) => {
   });
 };
 
+// employee comment on gif
+const employeeCommentGif = (req, res) => {
+  pool.query('INSERT INTO gif_comments (gif_id, employee_id, comment) VALUES($1,$2,$3)',
+    [req.params.id, req.body.id, req.body.comment], (error) => {
+    // handle error
+      queryError(error, 500, res);
+
+      res.status(200).send({
+        status: 'success',
+        data: {
+          message: 'gif comment added successfully',
+        },
+      });
+    });
+};
+
 module.exports = {
   adminLogin,
   adminCreateEmployee,
@@ -302,4 +318,5 @@ module.exports = {
   employeeCanViewSpecificArticle,
   employeeUploadGif,
   employeeDeleteGif,
+  employeeCommentGif,
 };
