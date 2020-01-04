@@ -71,5 +71,8 @@ app.delete('/teamwork/v1/gifs/:id', employeeAuth, db.employeeDeleteGif);
 // employee comments on gif
 app.post('/teamwork/v1/gifs/:id/comments', employeeAuth, db.employeeCommentGif);
 
+// employee view all gifs
+app.get('/teamwork/v1/gifs', employeeAuth, db.employeeViewAllGifs);
+
 // export the app
 module.exports = app;
