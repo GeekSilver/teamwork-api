@@ -275,6 +275,21 @@ const employeeUploadGif = (req, res) => {
   });
 };
 
+// employee delete gif
+const employeeDeleteGif = (req, res) => {
+  pool.query('DELETE FROM gifs WHERE id=$1', [req.params.id], (error) => {
+    // handle error
+    queryError(error, 500, res);
+
+    res.status(200).send({
+      status: 'success',
+      data: {
+        message: 'gif deleted successfully',
+      },
+    });
+  });
+};
+
 module.exports = {
   adminLogin,
   adminCreateEmployee,
@@ -286,4 +301,5 @@ module.exports = {
   employeeCanViewAllArticles,
   employeeCanViewSpecificArticle,
   employeeUploadGif,
+  employeeDeleteGif,
 };
