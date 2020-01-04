@@ -56,5 +56,8 @@ app.delete('/teamwork/v1/articles/:id', employeeAuth, db.employeeDeleteArticle);
 // employee comments on article
 app.post('/teamwork/v1/articles/:id/comments', employeeAuth, db.employeeCommentsOnArticle);
 
+// employee view all articles
+app.get('/teamwork/v1/articles', employeeAuth, db.employeeCanViewAllArticles);
+
 // export the app
 module.exports = app;
