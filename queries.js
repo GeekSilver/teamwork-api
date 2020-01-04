@@ -126,8 +126,24 @@ const employeeLogin = (req, res) => {
   });
 };
 
+// employee post an article
+const employeePostArticle = (req, res) => {
+  pool.query('INSERT INTO articles (employee_id, title, body, category) VALUES ($1,$2,$3,$4)',
+    [req.body.id, req.body.title, req.body.body, req.body.category], (error) => {
+      queryError(error, 401, res);
+
+      res.status(200).send({
+        status: 'success',
+        data: {
+          message: 'article added successfully',
+        },
+      });
+    });
+};
+
 module.exports = {
   adminLogin,
   adminCreateEmployee,
   employeeLogin,
+  employeePostArticle,
 };
