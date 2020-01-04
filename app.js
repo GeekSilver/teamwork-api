@@ -65,5 +65,8 @@ app.get('/teamwork/v1/articles/:id', employeeAuth, db.employeeCanViewSpecificArt
 // employee post gif
 app.post('/teamwork/v1/gifs', multerGifHandling, employeeAuth, db.employeeUploadGif);
 
+// employee delete a gif
+app.delete('/teamwork/v1/gifs/:id', employeeAuth, db.employeeDeleteGif);
+
 // export the app
 module.exports = app;
