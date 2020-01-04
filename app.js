@@ -40,5 +40,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // admin login
 app.post('/teamwork/v1/admin/login', db.adminLogin);
 
+// admin create employee
+app.post('/teamwork/v1/admin/employees', db.adminCreateEmployee);
+
 // export the app
 module.exports = app;
