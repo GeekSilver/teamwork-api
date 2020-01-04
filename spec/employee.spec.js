@@ -944,3 +944,101 @@ describe('Employee', () => {
     resetGlobals(globals);
   });
 });
+
+// test employee can view feed
+describe('Employee', () => {
+  let feedStatus;
+  let gif;
+  let gifPublicId;
+  beforeAll((done) => {
+    // given an employee & gifs & posts
+    createAndAuthenticateEmployee(employeeDetails, (empToken) => {
+      const gifUrl = faker.image.avatar();
+      // write the gif in fs
+      const writeStream = fs.createWriteStream('gif.png');
+      request(gifUrl).pipe(writeStream);
+      writeStream.on('finish', () => {
+        gif = fs.createReadStream('gif.png');
+        gif.on('open', () => {
+          // post the gif
+          request.post({
+            url: `${url}/gifs`,
+            formData: {
+              id: employeeId,
+              gif,
+            },
+            headers: {
+              Authorization: `bearer ${empToken}`,
+            },
+          }, (error, _response, body) => {
+            handleError(error);
+            const bodyJson = JSON.parse(body);
+            // cloudinary file public_id
+            gifPublicId = bodyJson.data.public_id;
+            // get the gif id from db
+            pool.query('SELECT id FROM gifs WHERE employee_id = $1', [employeeId],
+              (error1, result) => {
+                // handle error1
+                handleError(error1);
+                gifId = result.rows[0].id;
+                // creating the article
+                request.post({
+                  uri: `${url}/articles`,
+                  headers: {
+                    Authorization: `bearer ${empToken}`,
+                  },
+                  form: {
+                    id: employeeId,
+                    ...articleDetails,
+                  },
+                }, (error4) => {
+                  // handle error
+                  handleError(error4);
+                  // when they hit the endpoint GET /feed
+                  request.get({
+                    uri: `${url}/feed`,
+                    headers: {
+                      Authorization: `bearer ${empToken}`,
+                    },
+                    form: {
+                      id: employeeId,
+                    },
+                  }, (error5, _response3, body3) => {
+                    // handle error
+                    handleError(error5);
+                    feedStatus = parseToJson(body3).status;
+                    done();
+                  });
+                });
+              });
+          });
+        });
+      });
+    });
+  });
+  // then they view gifs & posts
+  it('can view feed of gifs & articles', () => {
+    expect(feedStatus).toEqual('success');
+  });
+
+  // clean up db after test
+  afterAll((done) => {
+    // delete the article
+    pool.query('DELETE FROM articles WHERE employee_id = $1', [employeeId], (error) => {
+      // handle error
+      handleError(error);
+      // delete gif & the employee
+      delEmployeeAndReferences(employeeDetails.email, 'gifs', () => {
+      // delete gif from local storage
+        fs.unlink('gif.png', () => {
+        // delete gif from cloudinary
+          cloudinary.v2.uploader.destroy(gifPublicId, () => {
+          // reset globals
+            resetGlobals(globals);
+            done();
+          });
+        });
+      });
+    });
+  });
+});

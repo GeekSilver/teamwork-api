@@ -77,5 +77,8 @@ app.get('/teamwork/v1/gifs', employeeAuth, db.employeeViewAllGifs);
 // employee view a specific gif
 app.get('/teamwork/v1/gifs/:id', employeeAuth, db.employeeViewSpecificGif);
 
+// employee view feed
+app.get('/teamwork/v1/feed', employeeAuth, db.employeeViewFeed);
+
 // export the app
 module.exports = app;

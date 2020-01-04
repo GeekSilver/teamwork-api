@@ -332,6 +332,27 @@ const employeeViewSpecificGif = (req, res) => {
   });
 };
 
+// employee view feed i.e both gifs & articles
+const employeeViewFeed = (req, res) => {
+  let feed;
+  // query all gifs
+  pool.query('SELECT * FROM gifs', (error1, result1) => {
+    // handle error
+    queryError(error1, 500, res);
+    const gifs = result1.rows;
+    // query all articles
+    pool.query('SELECT * FROM articles', (error2, result2) => {
+      // handle error
+      queryError(error2, 500, res);
+      const articles = result2.rows;
+      feed = gifs.concat(articles);
+      res.status(200).send({
+        status: 'success',
+        data: feed,
+      });
+    });
+  });
+};
 
 module.exports = {
   adminLogin,
@@ -348,4 +369,5 @@ module.exports = {
   employeeCommentGif,
   employeeViewAllGifs,
   employeeViewSpecificGif,
+  employeeViewFeed,
 };
