@@ -220,6 +220,24 @@ const employeeCommentsOnArticle = (req, res) => {
     });
 };
 
+// employee can view all articles
+const employeeCanViewAllArticles = (req, res) => {
+  pool.query('SELECT * FROM articles ORDER BY created_at DESC', (error, result) => {
+    // handle query error
+    queryError(error, 500, res);
+    if (result.length <= 0) {
+      res.status(200).send({
+        status: 'success',
+        data: 'no articles',
+      });
+    }
+    res.status(200).send({
+      status: 'success',
+      data: result.rows,
+    });
+  });
+};
+
 module.exports = {
   adminLogin,
   adminCreateEmployee,
@@ -228,4 +246,5 @@ module.exports = {
   employeeEditArticle,
   employeeDeleteArticle,
   employeeCommentsOnArticle,
+  employeeCanViewAllArticles,
 };
