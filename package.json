@@ -12,14 +12,15 @@
     "bcrypt": "^3.0.7",
     "cloudinary": "^1.18.1",
     "fs": "0.0.1-security",
-    "pg": "^7.17.0"
-  },
-  "devDependencies": {
+    "pg": "^7.17.0",
+    "body-parser": "^1.19.0",
     "datauri": "^2.0.0",
     "express": "^4.17.1",
+    "multer": "^1.4.2"
+  },
+  "devDependencies": {
     "faker": "^4.1.0",
     "jasmine": "^3.5.0",
-    "multer": "^1.4.2",
     "request": "^2.88.0"
   },
   "scripts": {

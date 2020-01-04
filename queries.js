@@ -45,7 +45,7 @@ cloudinary.config({
 // query error handling
 const queryError = (error, status, res) => {
   if (error) {
-    return res.status(status).send({
+    return res.status(status).json({
       status: 'error',
       error,
     });
@@ -77,6 +77,27 @@ const adminLogin = (req, res) => {
   });
 };
 
+// admin can create an employee
+const adminCreateEmployee = (req, res) => {
+  bcrypt.hash(req.body.password, 10, (error, hash) => {
+    queryError(error, 500, res);
+
+    pool.query('INSERT INTO employees (name ,email, password) VALUES ($1, $2, $3)',
+      [req.body.name, req.body.email, hash], (error1) => {
+      // error handling
+        queryError(error1, 500, res);
+
+        return res.status(200).json({
+          status: 'success',
+          data: {
+            message: 'employee added successfully',
+          },
+        });
+      });
+  });
+};
+
 module.exports = {
-  adminLogin
-}
+  adminLogin,
+  adminCreateEmployee,
+};
