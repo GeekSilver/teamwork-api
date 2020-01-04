@@ -204,6 +204,22 @@ const employeeDeleteArticle = (req, res) => {
   });
 };
 
+// employee comments on article
+const employeeCommentsOnArticle = (req, res) => {
+  pool.query('INSERT INTO comments (article_id, employee_id, comment) VALUES ($1,$2,$3)',
+    [req.params.id, req.body.id, req.body.comment], (error) => {
+    // handle query error
+      queryError(error, 500, res);
+      res.status(200).send({
+        status: 'success',
+        data: {
+          message: 'article comment added successfully',
+          articleId: req.params.id,
+        },
+      });
+    });
+};
+
 module.exports = {
   adminLogin,
   adminCreateEmployee,
@@ -211,4 +227,5 @@ module.exports = {
   employeePostArticle,
   employeeEditArticle,
   employeeDeleteArticle,
+  employeeCommentsOnArticle,
 };
