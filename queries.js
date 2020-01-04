@@ -141,9 +141,42 @@ const employeePostArticle = (req, res) => {
     });
 };
 
+// employee edit article
+const employeeEditArticle = (req, res) => {
+  let id;
+  // confirm employee owns aricle
+  pool.query('SELECT employee_id FROM articles WHERE id = $1', [req.params.id], (error, result) => {
+    // error handling
+    queryError(error, 500, res);
+    id = result.rows[0].employee_id;
+  });
+
+  if (id && id !== req.body.id) {
+    res.status(419).send({
+      status: 'error',
+      error: 'unathorized to edit this article',
+    });
+  }
+
+  pool.query('UPDATE articles SET title=$1, body=$2, category=$3 WHERE id=$4', [req.body.title,
+    req.body.body, req.body.category, req.params.id], (error) => {
+    // error handling
+    queryError(error, 500, res);
+
+    res.status(200).send({
+      status: 'success',
+      data: {
+        message: 'article updated successfully',
+        id: req.params.id,
+      },
+    });
+  });
+};
+
 module.exports = {
   adminLogin,
   adminCreateEmployee,
   employeeLogin,
   employeePostArticle,
+  employeeEditArticle,
 };
