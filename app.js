@@ -62,5 +62,8 @@ app.get('/teamwork/v1/articles', employeeAuth, db.employeeCanViewAllArticles);
 // employee view a specific article
 app.get('/teamwork/v1/articles/:id', employeeAuth, db.employeeCanViewSpecificArticle);
 
+// employee post gif
+app.post('/teamwork/v1/gifs', multerGifHandling, employeeAuth, db.employeeUploadGif);
+
 // export the app
 module.exports = app;
