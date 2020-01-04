@@ -50,5 +50,8 @@ app.post('/teamwork/v1/articles', employeeAuth, db.employeePostArticle);
 // employee edit article
 app.put('/teamwork/v1/articles/:id', employeeAuth, db.employeeEditArticle);
 
+// employee delete article
+app.delete('/teamwork/v1/articles/:id', employeeAuth, db.employeeDeleteArticle);
+
 // export the app
 module.exports = app;
