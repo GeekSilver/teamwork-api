@@ -59,5 +59,8 @@ app.post('/teamwork/v1/articles/:id/comments', employeeAuth, db.employeeComments
 // employee view all articles
 app.get('/teamwork/v1/articles', employeeAuth, db.employeeCanViewAllArticles);
 
+// employee view a specific article
+app.get('/teamwork/v1/articles/:id', employeeAuth, db.employeeCanViewSpecificArticle);
+
 // export the app
 module.exports = app;

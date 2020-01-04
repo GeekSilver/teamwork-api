@@ -238,6 +238,18 @@ const employeeCanViewAllArticles = (req, res) => {
   });
 };
 
+// employee can view a specific article
+const employeeCanViewSpecificArticle = (req, res) => {
+  pool.query('SELECT * FROM articles WHERE id=$1', [req.params.id], (error, result) => {
+    // handle query error
+    queryError(error, 500, res);
+    res.status(200).send({
+      status: 'success',
+      data: result.rows[0],
+    });
+  });
+};
+
 module.exports = {
   adminLogin,
   adminCreateEmployee,
@@ -247,4 +259,5 @@ module.exports = {
   employeeDeleteArticle,
   employeeCommentsOnArticle,
   employeeCanViewAllArticles,
+  employeeCanViewSpecificArticle,
 };
