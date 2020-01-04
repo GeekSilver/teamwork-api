@@ -308,7 +308,7 @@ const employeeCommentGif = (req, res) => {
 
 // employee can view all gifs
 const employeeViewAllGifs = (req, res) => {
-  pool.query('SELECT * FROM gifs', (error, result) => {
+  pool.query('SELECT * FROM gifs ORDER BY created_at DESC', (error, result) => {
     // handle error
     queryError(error, 500, res);
 
