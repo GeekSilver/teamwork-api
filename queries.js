@@ -319,6 +319,19 @@ const employeeViewAllGifs = (req, res) => {
   });
 };
 
+// employee view specific gif
+const employeeViewSpecificGif = (req, res) => {
+  pool.query('SELECT * FROM gifs WHERE id = $1', [req.params.id], (error, result) => {
+    // handle error
+    queryError(error, 500, res);
+
+    res.status(200).send({
+      status: 'success',
+      data: result.rows[0],
+    });
+  });
+};
+
 
 module.exports = {
   adminLogin,
@@ -334,4 +347,5 @@ module.exports = {
   employeeDeleteGif,
   employeeCommentGif,
   employeeViewAllGifs,
+  employeeViewSpecificGif,
 };
