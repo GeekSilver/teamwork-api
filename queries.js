@@ -250,6 +250,31 @@ const employeeCanViewSpecificArticle = (req, res) => {
   });
 };
 
+// employee upload gif
+const employeeUploadGif = (req, res) => {
+  // convert gif to blob
+  const gif = dataUri(req).content;
+
+  cloudinary.v2.uploader.upload(gif, (error, result) => {
+    // handle error
+    queryError(error, 500, res);
+
+    pool.query('INSERT INTO gifs (employee_id,url) VALUES($1,$2)', [req.body.id, result.secure_url],
+      (error1) => {
+        // handle error from node-postgress
+        queryError(error1, 500, res);
+
+        res.status(200).send({
+          status: 'success',
+          data: {
+            public_id: result.public_id,
+            message: 'gif added successfully',
+          },
+        });
+      });
+  });
+};
+
 module.exports = {
   adminLogin,
   adminCreateEmployee,
@@ -260,4 +285,5 @@ module.exports = {
   employeeCommentsOnArticle,
   employeeCanViewAllArticles,
   employeeCanViewSpecificArticle,
+  employeeUploadGif,
 };
