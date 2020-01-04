@@ -173,10 +173,42 @@ const employeeEditArticle = (req, res) => {
   });
 };
 
+// employee delete article
+const employeeDeleteArticle = (req, res) => {
+  let id;
+  // confirm employee owns aricle
+  pool.query('SELECT employee_id FROM articles WHERE id = $1', [req.params.id], (error, result) => {
+    // error handling
+    queryError(error, 500, res);
+    id = result.rows[0].employee_id;
+  });
+
+  if (id && id !== req.body.id) {
+    res.status(419).send({
+      status: 'error',
+      error: 'unathorized to delete this article',
+    });
+  }
+
+  pool.query('DELETE FROM articles WHERE id=$1', [req.params.id], (error) => {
+    // error handling
+    queryError(error, 500, res);
+
+    res.status(200).send({
+      status: 'success',
+      data: {
+        message: 'article deleted successfully',
+        id: 1,
+      },
+    });
+  });
+};
+
 module.exports = {
   adminLogin,
   adminCreateEmployee,
   employeeLogin,
   employeePostArticle,
   employeeEditArticle,
+  employeeDeleteArticle,
 };
