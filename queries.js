@@ -354,6 +354,26 @@ const employeeViewFeed = (req, res) => {
   });
 };
 
+// catch any wild(don't match any endpoint) GET requests
+const getWildRequests = (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    data: {
+      message: 'Your request did not match any path in the api',
+    },
+  });
+};
+
+// catch any wild(don't match any endpoint) POST requests
+const postWildRequests = (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    data: {
+      message: 'Your request did not match any path in the api',
+    },
+  });
+};
+
 module.exports = {
   adminLogin,
   adminCreateEmployee,
@@ -370,4 +390,6 @@ module.exports = {
   employeeViewAllGifs,
   employeeViewSpecificGif,
   employeeViewFeed,
+  getWildRequests,
+  postWildRequests,
 };
