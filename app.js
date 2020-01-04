@@ -80,5 +80,11 @@ app.get('/teamwork/v1/gifs/:id', employeeAuth, db.employeeViewSpecificGif);
 // employee view feed
 app.get('/teamwork/v1/feed', employeeAuth, db.employeeViewFeed);
 
+// catch wild (don't match any endpoint) POST requests
+app.post('/teamwork/v1/*', employeeAuth, db.getWildRequests);
+
+// catch wild (don't match any endpoint) GET requests
+app.get('/teamwork/v1/*', employeeAuth, db.getWildRequests);
+
 // export the app
 module.exports = app;
