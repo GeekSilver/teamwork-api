@@ -16,7 +16,8 @@ addons:
   postgresql: "12.1"
 
 before_script:
-  - PGPASSWORD= psql -c "CREATE DATABASE teamwork;" -U postgres -h localhost
+  - su - postgres
+  - psql -c "CREATE DATABASE teamwork;" -U postgres -h localhost
   - psql -c "CREATE USER root PASSWORD 'password' ;" -U postgres  -h localhost
   - psql -d teamwork -f db.sql -U root -h localhost
   - psql -c "INSERT INTO admin (email, password) VALUES ('postgres@test.com','password');" -U root -d teamwork -h localhost
