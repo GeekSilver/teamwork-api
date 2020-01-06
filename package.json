@@ -2,7 +2,7 @@
   "name": "teamwork-api",
   "version": "1.0.0",
   "description": "",
-  "main": ".eslintrc.js",
+  "main": "server.js",
   "dependencies": {
     "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^14.0.0",
@@ -21,9 +21,11 @@
   "devDependencies": {
     "faker": "^4.1.0",
     "jasmine": "^3.5.0",
+    "nodemon": "^2.0.2",
     "request": "^2.88.0"
   },
   "scripts": {
+    "start": "nodemon server",
     "test": "node_modules/.bin/jasmine"
   },
   "keywords": [],
