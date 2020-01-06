@@ -3,6 +3,13 @@ language: node_js
 node_js:
   - "8"
 
+before_install:
+  - sudo apt-get update
+  - sudo apt-get --yes remove postgresql\*
+  - sudo apt-get install -y postgresql-12 postgresql-client-12
+  - sudo cp /etc/postgresql/{9.6,11}/main/pg_hba.conf
+  - sudo service postgresql restart 12  
+
 services: 
   - postgresql
 
@@ -10,7 +17,7 @@ addons:
   postgresql: "12.1"
 
 before_script:
-  - psql -c "CREATE DATABASE teamwork;" -U postgres 
+  - psql -c "CREATE DATABASE teamwork;" -U postgres -h localhost
   - psql -c "CREATE USER root PASSWORD 'password' ;" -U postgres  -h localhost
   - psql -d teamwork -f db.sql -U root -h localhost
   - psql -c "INSERT INTO admin (email, password) VALUES ('postgres@test.com','password');" -U root -d teamwork -h localhost
