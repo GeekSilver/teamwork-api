@@ -11,10 +11,18 @@ const faker = require('faker');
 const fs = require('fs');
 // cloudinary for cloud file storage
 const cloudinary = require('cloudinary');
+// http to create server instances
+const http = require('http');
+
+// our express app instance
+const app = require('../app');
 
 
 // load .env
 require('dotenv').config('../.env');
+
+// create an http server instance
+const server = http.createServer(app);
 
 // api url
 const url = process.env.API_URL;
@@ -141,9 +149,12 @@ const delEmployeeAndReferences = (employeeEmail, table, callback) => {
 // login test
 describe('Employee', () => {
   beforeAll((done) => {
-    // create employee & attempt sign in
-    createAndAuthenticateEmployee(employeeDetails, () => {
-      done();
+    // start server
+    server.listen(process.env.API_PORT, () => {
+      // create employee & attempt sign in
+      createAndAuthenticateEmployee(employeeDetails, () => {
+        done();
+      });
     });
   });
 
@@ -159,7 +170,9 @@ describe('Employee', () => {
     pool.query('DELETE FROM employees WHERE email=$1', [employeeDetails.email], (error) => {
       handleError(error);
       // delete article created
-      done();
+      server.close(() => {
+        done();
+      });
     });
   });
 });
@@ -168,24 +181,27 @@ describe('Employee', () => {
 describe('Employee', () => {
   let postArticleStatus;
   beforeAll((done) => {
-    // given an authenticated employee
-    createAndAuthenticateEmployee(employeeDetails, (empToken) => {
-      // and an article
-      request.post({
-        uri: `${url}/articles`,
-        headers: {
-          Authorization: `bearer ${empToken}`,
-        },
-        form: {
-          id: employeeId,
-          ...articleDetails,
-        },
-      }, (error4, _response1, body1) => {
-        // handle error
-        handleError(error4);
-        const bodyJson = parseToJson(body1);
-        postArticleStatus = bodyJson.status;
-        done();
+    // start server
+    server.listen(process.env.API_PORT, () => {
+      // given an authenticated employee
+      createAndAuthenticateEmployee(employeeDetails, (empToken) => {
+        // and an article
+        request.post({
+          uri: `${url}/articles`,
+          headers: {
+            Authorization: `bearer ${empToken}`,
+          },
+          form: {
+            id: employeeId,
+            ...articleDetails,
+          },
+        }, (error4, _response1, body1) => {
+          // handle error
+          handleError(error4);
+          const bodyJson = parseToJson(body1);
+          postArticleStatus = bodyJson.status;
+          done();
+        });
       });
     });
   });
@@ -195,7 +211,11 @@ describe('Employee', () => {
     // reset globals
     resetGlobals(globals);
     // delete article & employee
-    delEmployeeAndReferences(employeeDetails.email, 'articles', done);
+    delEmployeeAndReferences(employeeDetails.email, 'articles', () => {
+      server.close(() => {
+        done();
+      });
+    });
   });
 
 
@@ -211,44 +231,47 @@ describe('Employee', () => {
   let editArticleStatus;
   // given an authenticated employee and their article
   beforeAll((done) => {
-    createAndAuthenticateEmployee(employeeDetails, (empToken) => {
-      request.post({
-        uri: `${url}/articles`,
-        headers: {
-          Authorization: `bearer ${empToken}`,
-        },
-        form: {
-          id: employeeId,
-          ...articleDetails,
-        },
-      }, (error) => {
-      // handle error
-        handleError(error);
-        pool.query('SELECT id FROM articles WHERE employee_id = $1', [employeeId],
-          (error1, result) => {
-          // handleError
-            handleError(error1);
-            const articleId = result.rows[0].id;
-            // when the employee hits the endpoint /articles/:id
-            request.put({
-              uri: `${url}/articles/${articleId}`,
-              headers: {
-                Authorization: `bearer ${empToken}`,
-              },
-              form: {
-                ...articleDetails,
-                id: employeeId,
-                title: 'updated title',
-              },
-            }, (error2, _response1, updateBody) => {
-              // handle error
-              handleError(error2);
-              // extract status
-              editArticleStatus = parseToJson(updateBody).status;
+    // start server
+    server.listen(process.env.API_PORT, () => {
+      createAndAuthenticateEmployee(employeeDetails, (empToken) => {
+        request.post({
+          uri: `${url}/articles`,
+          headers: {
+            Authorization: `bearer ${empToken}`,
+          },
+          form: {
+            id: employeeId,
+            ...articleDetails,
+          },
+        }, (error) => {
+        // handle error
+          handleError(error);
+          pool.query('SELECT id FROM articles WHERE employee_id = $1', [employeeId],
+            (error1, result) => {
+            // handleError
+              handleError(error1);
+              const articleId = result.rows[0].id;
+              // when the employee hits the endpoint /articles/:id
+              request.put({
+                uri: `${url}/articles/${articleId}`,
+                headers: {
+                  Authorization: `bearer ${empToken}`,
+                },
+                form: {
+                  ...articleDetails,
+                  id: employeeId,
+                  title: 'updated title',
+                },
+              }, (error2, _response1, updateBody) => {
+                // handle error
+                handleError(error2);
+                // extract status
+                editArticleStatus = parseToJson(updateBody).status;
 
-              done();
+                done();
+              });
             });
-          });
+        });
       });
     });
   });
@@ -263,7 +286,11 @@ describe('Employee', () => {
     // reset globals
     resetGlobals(globals);
     // delete article & employee
-    delEmployeeAndReferences(employeeDetails.email, 'articles', done);
+    delEmployeeAndReferences(employeeDetails.email, 'articles', () => {
+      server.close(() => {
+        done();
+      });
+    });
   });
 });
 
@@ -273,41 +300,44 @@ describe('Employee', () => {
   // given an authenticated employee and their article
   // given an authenticated employee and their article
   beforeAll((done) => {
-    createAndAuthenticateEmployee(employeeDetails, (empToken) => {
-      request.post({
-        uri: `${url}/articles`,
-        headers: {
-          Authorization: `bearer ${empToken}`,
-        },
-        form: {
-          id: employeeId,
-          ...articleDetails,
-        },
-      }, (error) => {
-        // handle error
-        handleError(error);
-        pool.query('SELECT id FROM articles WHERE employee_id = $1', [employeeId],
-          (error1, result) => {
-            // handleError
-            handleError(error1);
-            const articleId = result.rows[0].id;
-            // when they hit the endpoint [DELETE] /articles/:id
-            request.delete({
-              uri: `${url}/articles/${articleId}`,
-              headers: {
-                Authorization: `bearer ${empToken}`,
-              },
-              form: {
-                id: employeeId,
-              },
-            }, (error2, _response1, deleteBody) => {
-            // handle error
-              handleError(error2);
-              // extract status
-              deleteArticleStatus = parseToJson(deleteBody).status;
-              done();
+    // start server
+    server.listen(process.env.API_PORT, () => {
+      createAndAuthenticateEmployee(employeeDetails, (empToken) => {
+        request.post({
+          uri: `${url}/articles`,
+          headers: {
+            Authorization: `bearer ${empToken}`,
+          },
+          form: {
+            id: employeeId,
+            ...articleDetails,
+          },
+        }, (error) => {
+          // handle error
+          handleError(error);
+          pool.query('SELECT id FROM articles WHERE employee_id = $1', [employeeId],
+            (error1, result) => {
+              // handleError
+              handleError(error1);
+              const articleId = result.rows[0].id;
+              // when they hit the endpoint [DELETE] /articles/:id
+              request.delete({
+                uri: `${url}/articles/${articleId}`,
+                headers: {
+                  Authorization: `bearer ${empToken}`,
+                },
+                form: {
+                  id: employeeId,
+                },
+              }, (error2, _response1, deleteBody) => {
+              // handle error
+                handleError(error2);
+                // extract status
+                deleteArticleStatus = parseToJson(deleteBody).status;
+                done();
+              });
             });
-          });
+        });
       });
     });
   });
@@ -322,7 +352,11 @@ describe('Employee', () => {
     // reset globals
     resetGlobals(globals);
     // delete article & employee
-    delEmployeeAndReferences(employeeDetails.email, 'articles', done);
+    delEmployeeAndReferences(employeeDetails.email, 'articles', () => {
+      server.close(() => {
+        done();
+      });
+    });
   });
 });
 
@@ -331,47 +365,50 @@ describe('Employee ', () => {
   let articleId;
   let commentArticleStatus;
   beforeAll((done) => {
-    // given a user & a different user's article
-    createAndAuthenticateEmployee(employeeDetails, (empToken) => {
-      // creating the article
-      request.post({
-        uri: `${url}/articles`,
-        headers: {
-          Authorization: `bearer ${empToken}`,
-        },
-        form: {
-          id: employeeId,
-          ...articleDetails,
-        },
-      }, (error4) => {
-        // handle error
-        handleError(error4);
-        // get article id
-        pool.query('SELECT id FROM articles WHERE employee_id = $1', [employeeId],
-          (error, result) => {
-          // handle any error
-            handleError(error);
-            articleId = result.rows[0].id;
-            // create the second employee
-            createAndAuthenticateEmployee(secondEmployee, (empToken1) => {
-              // when second employee hits the endpoint POST /articles/:id/comments
-              request.post({
-                uri: `${url}/articles/${articleId}/comments`,
-                headers: {
-                  Authorization: `bearer ${empToken1}`,
-                },
-                form: {
-                  id: employeeId,
-                  comment: 'When you hit push --force on Friday:)',
-                },
-              }, (error1, _response, body) => {
-                // handle any errors
-                handleError(error1);
-                commentArticleStatus = parseToJson(body).status;
-                done();
+    // start server
+    server.listen(process.env.API_PORT, () => {
+      // given a user & a different user's article
+      createAndAuthenticateEmployee(employeeDetails, (empToken) => {
+        // creating the article
+        request.post({
+          uri: `${url}/articles`,
+          headers: {
+            Authorization: `bearer ${empToken}`,
+          },
+          form: {
+            id: employeeId,
+            ...articleDetails,
+          },
+        }, (error4) => {
+          // handle error
+          handleError(error4);
+          // get article id
+          pool.query('SELECT id FROM articles WHERE employee_id = $1', [employeeId],
+            (error, result) => {
+            // handle any error
+              handleError(error);
+              articleId = result.rows[0].id;
+              // create the second employee
+              createAndAuthenticateEmployee(secondEmployee, (empToken1) => {
+                // when second employee hits the endpoint POST /articles/:id/comments
+                request.post({
+                  uri: `${url}/articles/${articleId}/comments`,
+                  headers: {
+                    Authorization: `bearer ${empToken1}`,
+                  },
+                  form: {
+                    id: employeeId,
+                    comment: 'When you hit push --force on Friday:)',
+                  },
+                }, (error1, _response, body) => {
+                  // handle any errors
+                  handleError(error1);
+                  commentArticleStatus = parseToJson(body).status;
+                  done();
+                });
               });
             });
-          });
+        });
       });
     });
   });
@@ -394,7 +431,10 @@ describe('Employee ', () => {
         pool.query('DELETE FROM employees WHERE email = $1', [employeeDetails.email], (error1) => {
           // handle error
           handleError(error1);
-          done();
+          // close server
+          server.close(() => {
+            done();
+          });
         });
       });
     });
@@ -407,22 +447,11 @@ describe('Employee ', () => {
 describe('Employee', () => {
   let viewAllArticlesStatus;
   beforeAll((done) => {
-    // given a user & articles
-    createAndAuthenticateEmployee(employeeDetails, (empToken) => {
-      // creating the first article
-      request.post({
-        uri: `${url}/articles`,
-        headers: {
-          Authorization: `bearer ${empToken}`,
-        },
-        form: {
-          id: employeeId,
-          ...articleDetails,
-        },
-      }, (error4) => {
-        // handle error
-        handleError(error4);
-        // the second article
+    // start server
+    server.listen(process.env.API_PORT, () => {
+      // given a user & articles
+      createAndAuthenticateEmployee(employeeDetails, (empToken) => {
+        // creating the first article
         request.post({
           uri: `${url}/articles`,
           headers: {
@@ -430,25 +459,39 @@ describe('Employee', () => {
           },
           form: {
             id: employeeId,
-            title: 'second article',
-            body: 'Monday\'s are made from hell!',
-            category: 'horror',
+            ...articleDetails,
           },
-        }, (error) => {
+        }, (error4) => {
           // handle error
-          handleError(error);
-          // when the user hits the endpoint GET /articles
-          request.get({
+          handleError(error4);
+          // the second article
+          request.post({
             uri: `${url}/articles`,
             headers: {
               Authorization: `bearer ${empToken}`,
             },
             form: {
               id: employeeId,
+              title: 'second article',
+              body: 'Monday\'s are made from hell!',
+              category: 'horror',
             },
-          }, (error1, _response1, body1) => {
-            viewAllArticlesStatus = parseToJson(body1).status;
-            done();
+          }, (error) => {
+            // handle error
+            handleError(error);
+            // when the user hits the endpoint GET /articles
+            request.get({
+              uri: `${url}/articles`,
+              headers: {
+                Authorization: `bearer ${empToken}`,
+              },
+              form: {
+                id: employeeId,
+              },
+            }, (error1, _response1, body1) => {
+              viewAllArticlesStatus = parseToJson(body1).status;
+              done();
+            });
           });
         });
       });
@@ -474,7 +517,9 @@ describe('Employee', () => {
       pool.query('DELETE FROM employees WHERE email = $1', [employeeDetails.email], (error1) => {
         // handle error
         handleError(error1);
-        done();
+        server.close(() => {
+          done();
+        });
       });
     });
   });
@@ -486,43 +531,46 @@ describe('Employee', () => {
   let articleId;
   let viewSpecificArticleStatus;
   beforeAll((done) => {
-    // given a user & an article
-    createAndAuthenticateEmployee(employeeDetails, (empToken) => {
-      // creating the article
-      request.post({
-        uri: `${url}/articles`,
-        headers: {
-          Authorization: `bearer ${empToken}`,
-        },
-        form: {
-          id: employeeId,
-          ...articleDetails,
-        },
-      }, (error4) => {
-        // handle error
-        handleError(error4);
-        // get article id
-        pool.query('SELECT id FROM articles WHERE employee_id = $1', [employeeId],
-          (error, result) => {
-          // handle any error
-            handleError(error);
-            articleId = result.rows[0].id;
-            // when they hit the endpoint GET /articles/:id
-            request.get({
-              uri: `${url}/articles/${articleId}`,
-              headers: {
-                Authorization: `bearer ${empToken}`,
-              },
-              form: {
-                id: employeeId,
-              },
-            }, (error1, _response1, body1) => {
-              // handle error
-              handleError(error1);
-              viewSpecificArticleStatus = parseToJson(body1).status;
-              done();
+    // start server
+    server.listen(process.env.API_PORT, () => {
+      // given a user & an article
+      createAndAuthenticateEmployee(employeeDetails, (empToken) => {
+        // creating the article
+        request.post({
+          uri: `${url}/articles`,
+          headers: {
+            Authorization: `bearer ${empToken}`,
+          },
+          form: {
+            id: employeeId,
+            ...articleDetails,
+          },
+        }, (error4) => {
+          // handle error
+          handleError(error4);
+          // get article id
+          pool.query('SELECT id FROM articles WHERE employee_id = $1', [employeeId],
+            (error, result) => {
+            // handle any error
+              handleError(error);
+              articleId = result.rows[0].id;
+              // when they hit the endpoint GET /articles/:id
+              request.get({
+                uri: `${url}/articles/${articleId}`,
+                headers: {
+                  Authorization: `bearer ${empToken}`,
+                },
+                form: {
+                  id: employeeId,
+                },
+              }, (error1, _response1, body1) => {
+                // handle error
+                handleError(error1);
+                viewSpecificArticleStatus = parseToJson(body1).status;
+                done();
+              });
             });
-          });
+        });
       });
     });
   });
@@ -535,7 +583,10 @@ describe('Employee', () => {
   afterAll((done) => {
     // delete the employee and the article
     delEmployeeAndReferences(employeeDetails.email, 'articles', () => {
-      done();
+      // close server
+      server.close(() => {
+        done();
+      });
     });
   });
 });
@@ -548,33 +599,36 @@ describe('Employee', () => {
   let gifPublicId;
 
   beforeAll((done) => {
-    // given an authenticated employee & a gif
-    createAndAuthenticateEmployee(employeeDetails, (empToken) => {
-      const gifUrl = faker.image.avatar();
-      // write the gif in fs
-      const writeStream = fs.createWriteStream('gif.png');
-      request(gifUrl).pipe(writeStream);
-      writeStream.on('finish', () => {
-        gif = fs.createReadStream('gif.png');
-        gif.on('open', () => {
-          // when the employee hits the endpoint /gifs
-          request.post({
-            url: `${url}/gifs`,
-            formData: {
-              id: employeeId,
-              gif,
-            },
-            headers: {
-              Authorization: `bearer ${empToken}`,
-            },
-          }, (error, _response, body) => {
-            handleError(error);
-            const bodyJson = JSON.parse(body);
+    // start server
+    server.listen(process.env.API_PORT, () => {
+      // given an authenticated employee & a gif
+      createAndAuthenticateEmployee(employeeDetails, (empToken) => {
+        const gifUrl = faker.image.avatar();
+        // write the gif in fs
+        const writeStream = fs.createWriteStream('gif.png');
+        request(gifUrl).pipe(writeStream);
+        writeStream.on('finish', () => {
+          gif = fs.createReadStream('gif.png');
+          gif.on('open', () => {
+            // when the employee hits the endpoint /gifs
+            request.post({
+              url: `${url}/gifs`,
+              formData: {
+                id: employeeId,
+                gif,
+              },
+              headers: {
+                Authorization: `bearer ${empToken}`,
+              },
+            }, (error, _response, body) => {
+              handleError(error);
+              const bodyJson = JSON.parse(body);
 
-            postGifStatus = bodyJson.status;
-            gifPublicId = bodyJson.data.public_id;
+              postGifStatus = bodyJson.status;
+              gifPublicId = bodyJson.data.public_id;
 
-            done();
+              done();
+            });
           });
         });
       });
@@ -596,7 +650,10 @@ describe('Employee', () => {
       fs.unlink('gif.png', () => {
         // delete gif from cloudinary
         cloudinary.v2.uploader.destroy(gifPublicId, () => {
-          done();
+          // close server
+          server.close(() => {
+            done();
+          });
         });
       });
     });
@@ -611,53 +668,56 @@ describe('Employeee', () => {
   let gifPublicId;
 
   beforeAll((done) => {
-    // given an authenticated employee & a gif
-    createAndAuthenticateEmployee(employeeDetails, (empToken) => {
-      const gifUrl = faker.image.avatar();
-      // write the gif in fs
-      const writeStream = fs.createWriteStream('gif.png');
-      request(gifUrl).pipe(writeStream);
-      writeStream.on('finish', () => {
-        gif = fs.createReadStream('gif.png');
-        gif.on('open', () => {
-          // post the gif
-          request.post({
-            url: `${url}/gifs`,
-            formData: {
-              id: employeeId,
-              gif,
-            },
-            headers: {
-              Authorization: `bearer ${empToken}`,
-            },
-          }, (error, _response, body) => {
-            handleError(error);
-            const bodyJson = JSON.parse(body);
-            // cloudinary file public_id
-            gifPublicId = bodyJson.data.public_id;
-            // get the gif id from db
-            pool.query('SELECT id FROM gifs WHERE employee_id = $1', [employeeId],
-              (error1, result) => {
-                // handle error1
-                handleError(error1);
-                gifId = result.rows[0].id;
-                // when they hit the endpoint DELETE /gif/:id
-                request.delete({
-                  uri: `${url}/gifs/${gifId}`,
-                  headers: {
-                    Authorization: `bearer ${empToken}`,
-                  },
-                  form: {
-                    id: employeeId,
-                  },
-                }, (error2, _response1, body1) => {
-                  // handle error2
-                  handleError(error2);
-                  const body1Json = parseToJson(body1);
-                  deleteGifStatus = body1Json.status;
-                  done();
+    // starts server
+    server.listen(process.env.API_PORT, () => {
+      // given an authenticated employee & a gif
+      createAndAuthenticateEmployee(employeeDetails, (empToken) => {
+        const gifUrl = faker.image.avatar();
+        // write the gif in fs
+        const writeStream = fs.createWriteStream('gif.png');
+        request(gifUrl).pipe(writeStream);
+        writeStream.on('finish', () => {
+          gif = fs.createReadStream('gif.png');
+          gif.on('open', () => {
+            // post the gif
+            request.post({
+              url: `${url}/gifs`,
+              formData: {
+                id: employeeId,
+                gif,
+              },
+              headers: {
+                Authorization: `bearer ${empToken}`,
+              },
+            }, (error, _response, body) => {
+              handleError(error);
+              const bodyJson = JSON.parse(body);
+              // cloudinary file public_id
+              gifPublicId = bodyJson.data.public_id;
+              // get the gif id from db
+              pool.query('SELECT id FROM gifs WHERE employee_id = $1', [employeeId],
+                (error1, result) => {
+                  // handle error1
+                  handleError(error1);
+                  gifId = result.rows[0].id;
+                  // when they hit the endpoint DELETE /gif/:id
+                  request.delete({
+                    uri: `${url}/gifs/${gifId}`,
+                    headers: {
+                      Authorization: `bearer ${empToken}`,
+                    },
+                    form: {
+                      id: employeeId,
+                    },
+                  }, (error2, _response1, body1) => {
+                    // handle error2
+                    handleError(error2);
+                    const body1Json = parseToJson(body1);
+                    deleteGifStatus = body1Json.status;
+                    done();
+                  });
                 });
-              });
+            });
           });
         });
       });
@@ -679,7 +739,10 @@ describe('Employeee', () => {
       fs.unlink('gif.png', () => {
         // delete gif from cloudinary
         cloudinary.v2.uploader.destroy(gifPublicId, () => {
-          done();
+          // close server
+          server.close(() => {
+            done();
+          });
         });
       });
     });
@@ -694,57 +757,60 @@ describe('Employee', () => {
   let gifPublicId;
 
   beforeAll((done) => {
-    // given an authenticated employee & a gif
-    createAndAuthenticateEmployee(employeeDetails, (empToken) => {
-      const gifUrl = faker.image.avatar();
-      // write the gif in fs
-      const writeStream = fs.createWriteStream('gif.png');
-      request(gifUrl).pipe(writeStream);
-      writeStream.on('finish', () => {
-        gif = fs.createReadStream('gif.png');
-        gif.on('open', () => {
-          // post the gif
-          request.post({
-            url: `${url}/gifs`,
-            formData: {
-              id: employeeId,
-              gif,
-            },
-            headers: {
-              Authorization: `bearer ${empToken}`,
-            },
-          }, (error, _response, body) => {
-            handleError(error);
-            const bodyJson = JSON.parse(body);
-            // cloudinary file public_id
-            gifPublicId = bodyJson.data.public_id;
-            // get the gif id from db
-            pool.query('SELECT id FROM gifs WHERE employee_id = $1', [employeeId],
-              (error1, result) => {
-                // handle error1
-                handleError(error1);
-                gifId = result.rows[0].id;
-                // create & authenticate second empoyee who'll comment
-                createAndAuthenticateEmployee(secondEmployee, (empToken1) => {
-                  // when they hit the endpoint POST /gifs/:id/comments
-                  request.post({
-                    uri: `${url}/gifs/${gifId}/comments`,
-                    headers: {
-                      Authorization: `bearer ${empToken1}`,
-                    },
-                    form: {
-                      id: employeeId,
-                      comment: 'This is a gif comment!',
-                    },
-                  }, (error2, _response1, body1) => {
-                    // handle error2
-                    handleError(error2);
-                    const body1Json = parseToJson(body1);
-                    commentGifStatus = body1Json.status;
-                    done();
+    // start server
+    server.listen(process.env.API_PORT, () => {
+      // given an authenticated employee & a gif
+      createAndAuthenticateEmployee(employeeDetails, (empToken) => {
+        const gifUrl = faker.image.avatar();
+        // write the gif in fs
+        const writeStream = fs.createWriteStream('gif.png');
+        request(gifUrl).pipe(writeStream);
+        writeStream.on('finish', () => {
+          gif = fs.createReadStream('gif.png');
+          gif.on('open', () => {
+            // post the gif
+            request.post({
+              url: `${url}/gifs`,
+              formData: {
+                id: employeeId,
+                gif,
+              },
+              headers: {
+                Authorization: `bearer ${empToken}`,
+              },
+            }, (error, _response, body) => {
+              handleError(error);
+              const bodyJson = JSON.parse(body);
+              // cloudinary file public_id
+              gifPublicId = bodyJson.data.public_id;
+              // get the gif id from db
+              pool.query('SELECT id FROM gifs WHERE employee_id = $1', [employeeId],
+                (error1, result) => {
+                  // handle error1
+                  handleError(error1);
+                  gifId = result.rows[0].id;
+                  // create & authenticate second empoyee who'll comment
+                  createAndAuthenticateEmployee(secondEmployee, (empToken1) => {
+                    // when they hit the endpoint POST /gifs/:id/comments
+                    request.post({
+                      uri: `${url}/gifs/${gifId}/comments`,
+                      headers: {
+                        Authorization: `bearer ${empToken1}`,
+                      },
+                      form: {
+                        id: employeeId,
+                        comment: 'This is a gif comment!',
+                      },
+                    }, (error2, _response1, body1) => {
+                      // handle error2
+                      handleError(error2);
+                      const body1Json = parseToJson(body1);
+                      commentGifStatus = body1Json.status;
+                      done();
+                    });
                   });
                 });
-              });
+            });
           });
         });
       });
@@ -773,7 +839,10 @@ describe('Employee', () => {
           fs.unlink('gif.png', () => {
             // delete gif from cloudinary
             cloudinary.v2.uploader.destroy(gifPublicId, () => {
-              done();
+              // close server
+              server.close(() => {
+                done();
+              });
             });
           });
         });
@@ -792,45 +861,48 @@ describe('Employees ', () => {
   let viewAllGifsStatus;
 
   beforeAll((done) => {
-    // given an authenticated employee & gifs
-    createAndAuthenticateEmployee(employeeDetails, (empToken) => {
-      const gifUrl = faker.image.avatar();
-      // write the gif in fs
-      const writeStream = fs.createWriteStream('gif.png');
-      request(gifUrl).pipe(writeStream);
-      writeStream.on('finish', () => {
-        gif = fs.createReadStream('gif.png');
-        gif.on('open', () => {
-          // post the first gif
-          request.post({
-            url: `${url}/gifs`,
-            formData: {
-              id: employeeId,
-              gif,
-            },
-            headers: {
-              Authorization: `bearer ${empToken}`,
-            },
-          }, (error, _response, body) => {
-            handleError(error);
-            const bodyJson = parseToJson(body);
-            // cloudinary file public_id
-            gifPublicId = bodyJson.data.public_id;
-
-            // when they hit the endpoint GET /gifs
-            request.get({
-              uri: `${url}/gifs`,
+    // start server
+    server.listen(process.env.API_PORT, () => {
+      // given an authenticated employee & gifs
+      createAndAuthenticateEmployee(employeeDetails, (empToken) => {
+        const gifUrl = faker.image.avatar();
+        // write the gif in fs
+        const writeStream = fs.createWriteStream('gif.png');
+        request(gifUrl).pipe(writeStream);
+        writeStream.on('finish', () => {
+          gif = fs.createReadStream('gif.png');
+          gif.on('open', () => {
+            // post the first gif
+            request.post({
+              url: `${url}/gifs`,
+              formData: {
+                id: employeeId,
+                gif,
+              },
               headers: {
                 Authorization: `bearer ${empToken}`,
               },
-              form: {
-                id: employeeId,
-              },
-            }, (error3, _response2, body2) => {
-              // handle error
-              handleError(error3);
-              viewAllGifsStatus = parseToJson(body2).status;
-              done();
+            }, (error, _response, body) => {
+              handleError(error);
+              const bodyJson = parseToJson(body);
+              // cloudinary file public_id
+              gifPublicId = bodyJson.data.public_id;
+
+              // when they hit the endpoint GET /gifs
+              request.get({
+                uri: `${url}/gifs`,
+                headers: {
+                  Authorization: `bearer ${empToken}`,
+                },
+                form: {
+                  id: employeeId,
+                },
+              }, (error3, _response2, body2) => {
+                // handle error
+                handleError(error3);
+                viewAllGifsStatus = parseToJson(body2).status;
+                done();
+              });
             });
           });
         });
@@ -852,7 +924,10 @@ describe('Employees ', () => {
       fs.unlink('gif.png', () => {
         // delete gif from cloudinary
         cloudinary.v2.uploader.destroy(gifPublicId, () => {
-          done();
+          // close server
+          server.close(() => {
+            done();
+          });
         });
       });
     });
@@ -868,52 +943,55 @@ describe('Employee', () => {
 
   // given an employee & articles
   beforeAll((done) => {
-    // given an authenticated employee & a gif
-    createAndAuthenticateEmployee(employeeDetails, (empToken) => {
-      const gifUrl = faker.image.avatar();
-      // write the gif in fs
-      const writeStream = fs.createWriteStream('gif.png');
-      request(gifUrl).pipe(writeStream);
-      writeStream.on('finish', () => {
-        gif = fs.createReadStream('gif.png');
-        gif.on('open', () => {
-          // post the gif
-          request.post({
-            url: `${url}/gifs`,
-            formData: {
-              id: employeeId,
-              gif,
-            },
-            headers: {
-              Authorization: `bearer ${empToken}`,
-            },
-          }, (error, _response, body) => {
-            handleError(error);
-            const bodyJson = JSON.parse(body);
-            // cloudinary file public_id
-            gifPublicId = bodyJson.data.public_id;
-            // get the gif id from db
-            pool.query('SELECT id FROM gifs WHERE employee_id = $1', [employeeId],
-              (error1, result) => {
-                // handle error1
-                handleError(error1);
-                gifId = result.rows[0].id;
-                // when the employee hits the endpoint GET /gifs/:id
-                request.get({
-                  uri: `${url}/gifs/${gifId}`,
-                  headers: {
-                    Authorization: `bearer ${empToken}`,
-                  },
-                  form: {
-                    id: employeeId,
-                  },
-                }, (error2, _response1, body1) => {
-                  // handle errror
+    // start server
+    server.listen(process.env.API_PORT, () => {
+      // given an authenticated employee & a gif
+      createAndAuthenticateEmployee(employeeDetails, (empToken) => {
+        const gifUrl = faker.image.avatar();
+        // write the gif in fs
+        const writeStream = fs.createWriteStream('gif.png');
+        request(gifUrl).pipe(writeStream);
+        writeStream.on('finish', () => {
+          gif = fs.createReadStream('gif.png');
+          gif.on('open', () => {
+            // post the gif
+            request.post({
+              url: `${url}/gifs`,
+              formData: {
+                id: employeeId,
+                gif,
+              },
+              headers: {
+                Authorization: `bearer ${empToken}`,
+              },
+            }, (error, _response, body) => {
+              handleError(error);
+              const bodyJson = JSON.parse(body);
+              // cloudinary file public_id
+              gifPublicId = bodyJson.data.public_id;
+              // get the gif id from db
+              pool.query('SELECT id FROM gifs WHERE employee_id = $1', [employeeId],
+                (error1, result) => {
+                  // handle error1
                   handleError(error1);
-                  viewSpecificGifStatus = parseToJson(body1).status;
-                  done();
+                  gifId = result.rows[0].id;
+                  // when the employee hits the endpoint GET /gifs/:id
+                  request.get({
+                    uri: `${url}/gifs/${gifId}`,
+                    headers: {
+                      Authorization: `bearer ${empToken}`,
+                    },
+                    form: {
+                      id: employeeId,
+                    },
+                  }, (error2, _response1, body1) => {
+                    // handle errror
+                    handleError(error1);
+                    viewSpecificGifStatus = parseToJson(body1).status;
+                    done();
+                  });
                 });
-              });
+            });
           });
         });
       });
@@ -932,7 +1010,10 @@ describe('Employee', () => {
       fs.unlink('gif.png', () => {
         // delete gif from cloudinary
         cloudinary.v2.uploader.destroy(gifPublicId, () => {
-          done();
+          // close server
+          server.close(() => {
+            done();
+          });
         });
       });
     });
@@ -947,66 +1028,69 @@ describe('Employee', () => {
   let gif;
   let gifPublicId;
   beforeAll((done) => {
-    // given an employee & gifs & posts
-    createAndAuthenticateEmployee(employeeDetails, (empToken) => {
-      const gifUrl = faker.image.avatar();
-      // write the gif in fs
-      const writeStream = fs.createWriteStream('gif.png');
-      request(gifUrl).pipe(writeStream);
-      writeStream.on('finish', () => {
-        gif = fs.createReadStream('gif.png');
-        gif.on('open', () => {
-          // post the gif
-          request.post({
-            url: `${url}/gifs`,
-            formData: {
-              id: employeeId,
-              gif,
-            },
-            headers: {
-              Authorization: `bearer ${empToken}`,
-            },
-          }, (error, _response, body) => {
-            handleError(error);
-            const bodyJson = JSON.parse(body);
-            // cloudinary file public_id
-            gifPublicId = bodyJson.data.public_id;
-            // get the gif id from db
-            pool.query('SELECT id FROM gifs WHERE employee_id = $1', [employeeId],
-              (error1, result) => {
-                // handle error1
-                handleError(error1);
-                gifId = result.rows[0].id;
-                // creating the article
-                request.post({
-                  uri: `${url}/articles`,
-                  headers: {
-                    Authorization: `bearer ${empToken}`,
-                  },
-                  form: {
-                    id: employeeId,
-                    ...articleDetails,
-                  },
-                }, (error4) => {
-                  // handle error
-                  handleError(error4);
-                  // when they hit the endpoint GET /feed
-                  request.get({
-                    uri: `${url}/feed`,
+    // start server
+    server.listen(process.env.API_PORT, () => {
+      // given an employee & gifs & posts
+      createAndAuthenticateEmployee(employeeDetails, (empToken) => {
+        const gifUrl = faker.image.avatar();
+        // write the gif in fs
+        const writeStream = fs.createWriteStream('gif.png');
+        request(gifUrl).pipe(writeStream);
+        writeStream.on('finish', () => {
+          gif = fs.createReadStream('gif.png');
+          gif.on('open', () => {
+            // post the gif
+            request.post({
+              url: `${url}/gifs`,
+              formData: {
+                id: employeeId,
+                gif,
+              },
+              headers: {
+                Authorization: `bearer ${empToken}`,
+              },
+            }, (error, _response, body) => {
+              handleError(error);
+              const bodyJson = JSON.parse(body);
+              // cloudinary file public_id
+              gifPublicId = bodyJson.data.public_id;
+              // get the gif id from db
+              pool.query('SELECT id FROM gifs WHERE employee_id = $1', [employeeId],
+                (error1, result) => {
+                  // handle error1
+                  handleError(error1);
+                  gifId = result.rows[0].id;
+                  // creating the article
+                  request.post({
+                    uri: `${url}/articles`,
                     headers: {
                       Authorization: `bearer ${empToken}`,
                     },
                     form: {
                       id: employeeId,
+                      ...articleDetails,
                     },
-                  }, (error5, _response3, body3) => {
+                  }, (error4) => {
                     // handle error
-                    handleError(error5);
-                    feedStatus = parseToJson(body3).status;
-                    done();
+                    handleError(error4);
+                    // when they hit the endpoint GET /feed
+                    request.get({
+                      uri: `${url}/feed`,
+                      headers: {
+                        Authorization: `bearer ${empToken}`,
+                      },
+                      form: {
+                        id: employeeId,
+                      },
+                    }, (error5, _response3, body3) => {
+                      // handle error
+                      handleError(error5);
+                      feedStatus = parseToJson(body3).status;
+                      done();
+                    });
                   });
                 });
-              });
+            });
           });
         });
       });
@@ -1031,7 +1115,10 @@ describe('Employee', () => {
           cloudinary.v2.uploader.destroy(gifPublicId, () => {
           // reset globals
             resetGlobals(globals);
-            done();
+            // close server
+            server.close(() => {
+              done();
+            });
           });
         });
       });

@@ -5,9 +5,17 @@ const request = require('request');
 const { Pool } = require('pg');
 // bcrypt for password hashing
 const bcrypt = require('bcrypt');
+// http to create server instances
+const http = require('http');
+
+// our express app instance
+const app = require('../app');
 
 // load .env
 require('dotenv').config('../.env');
+
+// create an http server instance
+const server = http.createServer(app);
 
 // api url
 const url = process.env.API_URL;
@@ -95,22 +103,25 @@ const createAndAuthenticateEmployee = (detailsObject, callback) => {
 describe('API', () => {
   let getWildRequestStatus;
   beforeAll((done) => {
-    // given an employee
-    createAndAuthenticateEmployee(employeeDetails, (empToken) => {
-      // when they hit the endpoint GET /* (any undefined endpoint)
-      request.get({
-        uri: `${url}/anything-wild`,
-        headers: {
-          Authorization: `bearer ${empToken}`,
-        },
-        form: {
-          id: employeeId,
-        },
-      }, (error, response, body) => {
-      // handle error
-        handleError(error);
-        getWildRequestStatus = parseToJson(body).status;
-        done();
+    // start server
+    server.listen(process.env.API_PORT, () => {
+      // given an employee
+      createAndAuthenticateEmployee(employeeDetails, (empToken) => {
+        // when they hit the endpoint GET /* (any undefined endpoint)
+        request.get({
+          uri: `${url}/anything-wild`,
+          headers: {
+            Authorization: `bearer ${empToken}`,
+          },
+          form: {
+            id: employeeId,
+          },
+        }, (error, response, body) => {
+        // handle error
+          handleError(error);
+          getWildRequestStatus = parseToJson(body).status;
+          done();
+        });
       });
     });
   });
@@ -128,7 +139,9 @@ describe('API', () => {
       handleError(error);
       // reset globals
       resetGlobals(globals);
-      done();
+      server.close(() => {
+        done();
+      });
     });
   });
 });
@@ -137,22 +150,25 @@ describe('API', () => {
 describe('API', () => {
   let postWildRequestStatus;
   beforeAll((done) => {
-    // given an employee
-    createAndAuthenticateEmployee(employeeDetails, (empToken) => {
-      // when they hit the endpoint POST /* (any undefined endpoint)
-      request.post({
-        uri: `${url}/anything-wild`,
-        headers: {
-          Authorization: `bearer ${empToken}`,
-        },
-        form: {
-          id: employeeId,
-        },
-      }, (error, response, body) => {
-      // handle error
-        handleError(error);
-        postWildRequestStatus = parseToJson(body).status;
-        done();
+    // start server
+    server.listen(process.env.API_PORT, () => {
+      // given an employee
+      createAndAuthenticateEmployee(employeeDetails, (empToken) => {
+        // when they hit the endpoint POST /* (any undefined endpoint)
+        request.post({
+          uri: `${url}/anything-wild`,
+          headers: {
+            Authorization: `bearer ${empToken}`,
+          },
+          form: {
+            id: employeeId,
+          },
+        }, (error, response, body) => {
+        // handle error
+          handleError(error);
+          postWildRequestStatus = parseToJson(body).status;
+          done();
+        });
       });
     });
   });
@@ -170,7 +186,9 @@ describe('API', () => {
       handleError(error);
       // reset globals
       resetGlobals(globals);
-      done();
+      server.close(() => {
+        done();
+      });
     });
   });
 });

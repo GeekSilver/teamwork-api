@@ -5,10 +5,17 @@ const request = require('request');
 const faker = require('faker');
 // pg for postgres db transactions
 const { Pool } = require('pg');
+// http to create server instances
+const http = require('http');
 
+// our express app instance
+const app = require('../app');
 
 // load .env
 require('dotenv').config('../.env');
+
+// create an http server instance
+const server = http.createServer(app);
 
 // api url
 const url = process.env.API_URL;
@@ -48,21 +55,31 @@ describe('Admin', () => {
   let status;
 
   beforeAll((done) => {
-    // attempt admin login
-    request.post({
-      uri: `${url}/admin/login`,
-      form: adminDetails,
-    }, (error, response, body) => {
-      handleError(error);
+    // start server
+    server.listen(process.env.API_PORT, () => {
+      // attempt admin login
+      request.post({
+        uri: `${url}/admin/login`,
+        form: adminDetails,
+      }, (error, response, body) => {
+        handleError(error);
 
-      const bodyJson = parseToJson(body);
-      status = bodyJson.status;
-      done();
+        const bodyJson = parseToJson(body);
+        status = bodyJson.status;
+        done();
+      });
     });
   });
 
   it('can login', () => {
     expect(status).toEqual('success');
+  });
+
+  afterAll((done) => {
+    // close server
+    server.close(() => {
+      done();
+    });
   });
 });
 
@@ -72,17 +89,20 @@ describe('Admin ', () => {
     status;
 
   beforeAll((done) => {
-    // login admin
-    request.post({
-      uri: `${url}/admin/login`,
-      form: adminDetails,
-    }, (error, response, body) => {
-      handleError(error);
+    // start server
+    server.listen(process.env.API_PORT, () => {
+      // login admin
+      request.post({
+        uri: `${url}/admin/login`,
+        form: adminDetails,
+      }, (error, response, body) => {
+        handleError(error);
 
-      const bodyJson = parseToJson(body);
-      token = bodyJson.data;
+        const bodyJson = parseToJson(body);
+        token = bodyJson.data;
 
-      done();
+        done();
+      });
     });
   });
 
@@ -107,7 +127,10 @@ describe('Admin ', () => {
     pool.query('DELETE FROM employees WHERE email = $1', [employeeDetails.email], (error) => {
       handleError(error);
     });
-    done();
+    // close server
+    server.close(() => {
+      done();
+    });
   });
 
   it('can create employee', () => {
