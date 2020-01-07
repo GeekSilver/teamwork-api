@@ -21,6 +21,7 @@ before_script:
   - PGPASSWORD='' psql -c "CREATE USER root PASSWORD 'password' ;" -U postgres  -h localhost
   - PGPASSWORD=password psql -d teamwork -f db.sql -U root -h localhost
   - PGPASSWORD=password psql -c "INSERT INTO admin (email, password) VALUES ('postgres@test.com','password');" -U root -d teamwork -h localhost
+  - PGPASSWORD=password psql -c "SELECT * FROM admin" -U root -h localhost -d teamwork  
 
 deploy:
   - provider: heroku
