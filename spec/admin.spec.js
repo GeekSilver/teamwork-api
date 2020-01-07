@@ -104,7 +104,7 @@ describe('Admin ', () => {
   });
 
   afterAll((done) => {
-    pool.query('DELETE FROM employees WHERE email = $1', [employeeDetails.email], (error, result) => {
+    pool.query('DELETE FROM employees WHERE email = $1', [employeeDetails.email], (error) => {
       handleError(error);
     });
     done();
