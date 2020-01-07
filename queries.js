@@ -52,7 +52,12 @@ const queryError = (error, status, res) => {
 const adminLogin = (req, res) => {
   pool.query('SELECT password,id FROM admin WHERE email = $1', [req.body.email], (error, result) => {
     // error handling
-    queryError(error, 500, res);
+    if (error) {
+      return res.status(500).json({
+        status: 'error',
+        error,
+      });
+    }
 
     bcrypt.compare(req.body.password, result.rows[0].password).then(
       (status) => {
@@ -68,7 +73,13 @@ const adminLogin = (req, res) => {
         });
       },
     ).catch((error1) => {
-      queryError(error1, 500, res);
+      // error handling
+      if (error1) {
+        return res.status(500).json({
+          status: 'error',
+          error: error1,
+        });
+      }
     });
   });
 };
@@ -76,12 +87,23 @@ const adminLogin = (req, res) => {
 // admin can create an employee
 const adminCreateEmployee = (req, res) => {
   bcrypt.hash(req.body.password, 10, (error, hash) => {
-    queryError(error, 500, res);
+    // error handling
+    if (error) {
+      return res.status(500).json({
+        status: 'error',
+        error,
+      });
+    }
 
     pool.query('INSERT INTO employees (name ,email, password) VALUES ($1, $2, $3)',
       [req.body.name, req.body.email, hash], (error1) => {
-      // error handling
-        queryError(error1, 500, res);
+        // error handling
+        if (error1) {
+          return res.status(500).json({
+            status: 'error',
+            error: error1,
+          });
+        }
 
         return res.status(200).json({
           status: 'success',
