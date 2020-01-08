@@ -2,6 +2,10 @@
   "name": "teamwork-api",
   "version": "1.0.0",
   "description": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GeekSilver/teamwork-api.git"
+  },
   "main": "server.js",
   "dependencies": {
     "eslint": "^6.8.0",
@@ -19,14 +23,16 @@
     "multer": "^1.4.2"
   },
   "devDependencies": {
+    "coveralls": "^3.0.9",
     "faker": "^4.1.0",
     "jasmine": "^3.5.0",
     "nodemon": "^2.0.2",
+    "nyc": "^15.0.0",
     "request": "^2.88.0"
   },
   "scripts": {
     "start": "nodemon server",
-    "test": "node_modules/.bin/jasmine"
+    "test": "nyc jasmine && nyc report --reporter=text-lcov | coveralls"
   },
   "keywords": [],
   "author": "",
