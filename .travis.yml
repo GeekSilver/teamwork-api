@@ -2,9 +2,6 @@ language: node_js
 
 node_js:
   - "8"
-env:
-  global:
-    - CC_TEST_REPORTER_ID=f241b1c0034b615d48967c634592a9b12d57de52f56e3e7c11d9ff9364d08c1f
 
 cache:
   npm: false
@@ -32,7 +29,7 @@ before_script:
   - PGPASSWORD=password psql -c "INSERT INTO admin (email, password) VALUES ('postgres@test.com', '$ADMIN_PASSWORD_HASH');" -U root -d teamwork -h localhost
 
 after_script:
-  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
+  - ./cc-test-reporter after-build
 
 deploy:
   - provider: heroku
