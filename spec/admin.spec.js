@@ -66,7 +66,6 @@ describe('Admin', () => {
 
         const bodyJson = parseToJson(body);
         status = bodyJson.status;
-        console.log('error :'+ bodyJson.error);
         done();
       });
     });
@@ -101,7 +100,6 @@ describe('Admin ', () => {
 
         const bodyJson = parseToJson(body);
         token = bodyJson.data;
-        console.log('error1 :'+ bodyJson.error);
         done();
       });
     });
@@ -120,7 +118,6 @@ describe('Admin ', () => {
 
       const bodyJson = parseToJson(body);
       status = bodyJson.status;
-      console.log('error2 :'+ bodyJson.error);
       done();
     });
   });
