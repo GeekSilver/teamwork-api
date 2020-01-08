@@ -20,10 +20,16 @@ addons:
   postgresql: "12.1"
 
 before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
   - PGPASSWORD='' psql -c "CREATE DATABASE teamwork;" -U postgres -h localhost
   - PGPASSWORD='' psql -c "CREATE USER root PASSWORD 'password' ;" -U postgres  -h localhost
   - PGPASSWORD=password psql -d teamwork -f db.sql -U root -h localhost
   - PGPASSWORD=password psql -c "INSERT INTO admin (email, password) VALUES ('postgres@test.com', '$ADMIN_PASSWORD_HASH');" -U root -d teamwork -h localhost
+
+after_script:
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
 
 deploy:
   - provider: heroku
