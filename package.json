@@ -32,7 +32,7 @@
   },
   "scripts": {
     "start": "nodemon server",
-    "test": "nyc jasmine && nyc report --reporter=text-lcov | coveralls"
+    "test": "nyc --reporter=lcov jasmine && nyc report --reporter=text-lcov | coveralls"
   },
   "keywords": [],
   "author": "",
