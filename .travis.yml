@@ -3,6 +3,9 @@ language: node_js
 node_js:
   - "8"
 
+cache:
+  npm: false
+
 before_install:
   - sudo apt-get update
   - sudo apt-get --yes remove postgresql\*
