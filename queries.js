@@ -50,113 +50,110 @@ const queryError = (error, status, res) => {
 
 // admin login
 const adminLogin = (req, res) => {
-  pool.query('SELECT password,id FROM admin WHERE email = $1', [req.body.email], (error, result) => {
-    // error handling
-    if (error) {
-      return res.status(500).json({
-        status: 'error',
-        error,
-      });
-    }
-
-    bcrypt.compare(req.body.password, result.rows[0].password).then(
-      (status) => {
-        if (!status) {
-          queryError('admin password mismatch', 301, res);
-        }
-        // sign jw token
-        const token = jwt.sign({ adminId: result.rows[0].id }, 'SECRET', { expiresIn: '24h' });
-
-        return res.status(200).json({
-          status: 'success',
-          data: token,
-        });
-      },
-    ).catch((error1) => {
-      // error handling
-      if (error1) {
-        return res.status(500).json({
-          status: 'error',
-          error: error1,
-        });
-      }
-    });
-  });
-};
-
-// admin can create an employee
-const adminCreateEmployee = (req, res) => {
-  bcrypt.hash(req.body.password, 10, (error, hash) => {
-    // error handling
-    if (error) {
-      return res.status(500).json({
-        status: 'error',
-        error,
-      });
-    }
-
-    pool.query('INSERT INTO employees (name ,email, password) VALUES ($1, $2, $3)',
-      [req.body.name, req.body.email, hash], (error1) => {
-        // error handling
-        if (error1) {
-          return res.status(500).json({
-            status: 'error',
-            error: error1,
+  // retrieve the req details
+  pool.query('SELECT password,id FROM admin WHERE email = $1', [req.body.email],
+    (error, result) => {
+    // handle error
+      queryError(error, 500, res);
+      // compare password
+      bcrypt.compare(req.body.password, result.rows[0].password, (error1, match) => {
+        // handle error
+        queryError(error1, 500, res);
+        // if password match
+        if (match) {
+          // sign token
+          const token = jwt.sign({ adminId: result.rows[0].id }, 'SECRET', { expiresIn: '24h' });
+          // respond with success status and a token
+          return res.status(200).send({
+            status: 'success',
+            data: token,
           });
         }
-
-        return res.status(200).json({
-          status: 'success',
-          data: {
-            message: 'employee added successfully',
-          },
-        });
+        // else send password mismatch error
+        queryError('password mismatch', 200, res);
       });
-  });
+    });
+};
+
+// admin create employee
+const adminCreateEmployee = (req, res) => {
+  // validate req details
+  if (req.body.email !== 'undefined' && req.body.name !== 'undefined' && req.body.password !== 'undefined') {
+    bcrypt.hash(req.body.password, 10, (error, hash) => {
+      // handle error
+      queryError(error, 500, res);
+      // insert user to db
+      pool.query('INSERT INTO employees (name, email, password) VALUES ($1, $2, $3)',
+        [req.body.name, req.body.email, hash], (error1) => {
+          // handle error
+          queryError(error1, 500, res);
+        });
+      // respond with success
+      return res.status(200).send({
+        status: 'success',
+        data: {
+          message: 'employee added successfully',
+        },
+      });
+    });
+  } else {
+    // else respond with invalid details error
+    queryError('invalid details', 200, res);
+  }
 };
 
 // employee login
 const employeeLogin = (req, res) => {
-  pool.query('SELECT password,id FROM employees WHERE email = $1', [req.body.email], (error, result) => {
-    // error handling
-    queryError(error, 500, res);
-    // verify password
-    bcrypt.compare(req.body.password, result.rows[0].password).then(
-      (status) => {
-        if (!status) {
-          return res.status(301).send({
-            status: 'error',
-            error: 'employee password mismatch',
-          });
-        }
-        // sign jw token
-        const token = jwt.sign({ employeeId: result.rows[0].id }, 'SECRET', { expiresIn: '24h' });
+  // validate data
+  if (req.body.email !== 'undefined' && req.body.password !== 'undefined') {
+    pool.query('SELECT password,id FROM employees WHERE email = $1', [req.body.email], (error, result) => {
+      // error handling
+      queryError(error, 500, res);
+      // verify password
+      bcrypt.compare(req.body.password, result.rows[0].password).then(
+        (status) => {
+          if (!status) {
+            return res.status(301).send({
+              status: 'error',
+              error: 'employee password mismatch',
+            });
+          }
+          // sign jw token
+          const token = jwt.sign({ employeeId: result.rows[0].id }, 'SECRET', { expiresIn: '24h' });
 
-        return res.status(200).send({
-          status: 'success',
-          data: token,
-        });
-      },
-    ).catch((error1) => res.status(500).send({
-      status: 'error',
-      error: error1,
-    }));
-  });
+          return res.status(200).send({
+            status: 'success',
+            data: token,
+          });
+        },
+      ).catch((error1) => res.status(500).send({
+        status: 'error',
+        error: error1,
+      }));
+    });
+  } else {
+    queryError('invalid details', 200, res);
+  }
 };
 
 // employee post an article
 const employeePostArticle = (req, res) => {
-  pool.query('INSERT INTO articles (employee_id, title, body, category) VALUES ($1,$2,$3,$4)',
-    [req.body.id, req.body.title, req.body.body, req.body.category], (error) => {
-      queryError(error, 401, res);
+  // validate data
+  if (req.body.id !== 'undefined' && req.body.title !== 'undefined' && req.body.body !== 'undefined' && req.body.category !== 'undefined') {
+    pool.query('INSERT INTO articles (employee_id, title, body, category) VALUES ($1,$2,$3,$4)',
+      [req.body.id, req.body.title, req.body.body, req.body.category], (error) => {
+        queryError(error, 401, res);
 
-      res.status(200).send({
-        status: 'success',
-        data: {
-          message: 'article added successfully',
-        },
+        return res.status(200).send({
+          status: 'success',
+          data: {
+            message: 'article added successfully',
+          },
+        });
       });
-    });
+  } else {
+    queryError('invalid details', 200, res);
+  }
 };
 
 // employee edit article
@@ -170,25 +167,29 @@ const employeeEditArticle = (req, res) => {
   });
 
   if (id && id !== req.body.id) {
-    res.status(419).send({
+    return res.status(419).send({
       status: 'error',
       error: 'unathorized to edit this article',
     });
   }
+  // validate data
+  if (req.body.title !== 'undefined' && req.body.body !== 'undefined' && req.body.category !== 'undefined') {
+    pool.query('UPDATE articles SET title=$1, body=$2, category=$3 WHERE id=$4', [req.body.title,
+      req.body.body, req.body.category, req.params.id], (error) => {
+      // error handling
+      queryError(error, 500, res);
 
-  pool.query('UPDATE articles SET title=$1, body=$2, category=$3 WHERE id=$4', [req.body.title,
-    req.body.body, req.body.category, req.params.id], (error) => {
-    // error handling
-    queryError(error, 500, res);
-
-    res.status(200).send({
-      status: 'success',
-      data: {
-        message: 'article updated successfully',
-        id: req.params.id,
-      },
+      return res.status(200).send({
+        status: 'success',
+        data: {
+          message: 'article updated successfully',
+          id: req.params.id,
+        },
+      });
     });
-  });
+  } else {
+    queryError('invalid details', 200, res);
+  }
 };
 
 // employee delete article
@@ -202,7 +203,7 @@ const employeeDeleteArticle = (req, res) => {
   });
 
   if (id && id !== req.body.id) {
-    res.status(419).send({
+    return res.status(419).send({
       status: 'error',
       error: 'unathorized to delete this article',
     });
@@ -212,7 +213,7 @@ const employeeDeleteArticle = (req, res) => {
     // error handling
     queryError(error, 500, res);
 
-    res.status(200).send({
+    return res.status(200).send({
       status: 'success',
       data: {
         message: 'article deleted successfully',
@@ -224,18 +225,23 @@ const employeeDeleteArticle = (req, res) => {
 
 // employee comments on article
 const employeeCommentsOnArticle = (req, res) => {
-  pool.query('INSERT INTO comments (article_id, employee_id, comment) VALUES ($1,$2,$3)',
-    [req.params.id, req.body.id, req.body.comment], (error) => {
-    // handle query error
-      queryError(error, 500, res);
-      res.status(200).send({
-        status: 'success',
-        data: {
-          message: 'article comment added successfully',
-          articleId: req.params.id,
-        },
+  // validate data
+  if (req.body.id !== 'undefined' && req.body.comment !== 'undefined') {
+    pool.query('INSERT INTO comments (article_id, employee_id, comment) VALUES ($1,$2,$3)',
+      [req.params.id, req.body.id, req.body.comment], (error) => {
+      // handle query error
+        queryError(error, 500, res);
+        return res.status(200).send({
+          status: 'success',
+          data: {
+            message: 'article comment added successfully',
+            articleId: req.params.id,
+          },
+        });
       });
-    });
+  } else {
+    queryError('invalid details', 200, res);
+  }
 };
 
 // employee can view all articles
@@ -244,12 +250,12 @@ const employeeCanViewAllArticles = (req, res) => {
     // handle query error
     queryError(error, 500, res);
     if (result.length <= 0) {
-      res.status(200).send({
+      return res.status(200).send({
         status: 'success',
         data: 'no articles',
       });
     }
-    res.status(200).send({
+    return res.status(200).send({
       status: 'success',
       data: result.rows,
     });
@@ -261,7 +267,7 @@ const employeeCanViewSpecificArticle = (req, res) => {
   pool.query('SELECT * FROM articles WHERE id=$1', [req.params.id], (error, result) => {
     // handle query error
     queryError(error, 500, res);
-    res.status(200).send({
+    return res.status(200).send({
       status: 'success',
       data: result.rows[0],
     });
@@ -282,7 +288,7 @@ const employeeUploadGif = (req, res) => {
         // handle error from node-postgress
         queryError(error1, 500, res);
 
-        res.status(200).send({
+        return res.status(200).send({
           status: 'success',
           data: {
             public_id: result.public_id,
@@ -299,7 +305,7 @@ const employeeDeleteGif = (req, res) => {
     // handle error
     queryError(error, 500, res);
 
-    res.status(200).send({
+    return res.status(200).send({
       status: 'success',
       data: {
         message: 'gif deleted successfully',
@@ -310,18 +316,23 @@ const employeeDeleteGif = (req, res) => {
 
 // employee comment on gif
 const employeeCommentGif = (req, res) => {
-  pool.query('INSERT INTO gif_comments (gif_id, employee_id, comment) VALUES($1,$2,$3)',
-    [req.params.id, req.body.id, req.body.comment], (error) => {
-    // handle error
-      queryError(error, 500, res);
+  // validate data
+  if (req.body.id !== 'undefined' && req.body.comment !== 'undefined') {
+    pool.query('INSERT INTO gif_comments (gif_id, employee_id, comment) VALUES($1,$2,$3)',
+      [req.params.id, req.body.id, req.body.comment], (error) => {
+      // handle error
+        queryError(error, 500, res);
 
-      res.status(200).send({
-        status: 'success',
-        data: {
-          message: 'gif comment added successfully',
-        },
+        return res.status(200).send({
+          status: 'success',
+          data: {
+            message: 'gif comment added successfully',
+          },
+        });
       });
-    });
+  } else {
+    queryError('invalid details', 200, res);
+  }
 };
 
 // employee can view all gifs
@@ -330,7 +341,7 @@ const employeeViewAllGifs = (req, res) => {
     // handle error
     queryError(error, 500, res);
 
-    res.status(200).send({
+    return res.status(200).send({
       status: 'success',
       data: result.rows,
     });
@@ -343,7 +354,7 @@ const employeeViewSpecificGif = (req, res) => {
     // handle error
     queryError(error, 500, res);
 
-    res.status(200).send({
+    return res.status(200).send({
       status: 'success',
       data: result.rows[0],
     });
@@ -364,7 +375,7 @@ const employeeViewFeed = (req, res) => {
       queryError(error2, 500, res);
       const articles = result2.rows;
       feed = gifs.concat(articles);
-      res.status(200).send({
+      return res.status(200).send({
         status: 'success',
         data: feed,
       });
@@ -374,7 +385,7 @@ const employeeViewFeed = (req, res) => {
 
 // catch any wild(don't match any endpoint) GET requests
 const getWildRequests = (req, res) => {
-  res.status(200).json({
+  return res.status(200).json({
     status: 'success',
     data: {
       message: 'Your request did not match any path in the api',
@@ -384,7 +395,7 @@ const getWildRequests = (req, res) => {
 
 // catch any wild(don't match any endpoint) POST requests
 const postWildRequests = (req, res) => {
-  res.status(200).json({
+  return res.status(200).json({
     status: 'success',
     data: {
       message: 'Your request did not match any path in the api',
