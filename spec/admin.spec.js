@@ -86,8 +86,8 @@ describe('Admin', () => {
 
 // admin create employee test
 describe('Admin ', () => {
-  let token; let
-    status;
+  let token;
+  let status;
 
   beforeAll((done) => {
     // start server
