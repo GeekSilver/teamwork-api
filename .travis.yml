@@ -2,6 +2,9 @@ language: node_js
 
 node_js:
   - "8"
+env:
+  global:
+    - CC_TEST_REPORTER_ID=f241b1c0034b615d48967c634592a9b12d57de52f56e3e7c11d9ff9364d08c1f
 
 cache:
   npm: false
