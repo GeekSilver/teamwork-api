@@ -17,6 +17,10 @@ const employeeAuth = require('./auth.employee');
 const storage = multer.memoryStorage();
 const multerGifHandling = multer({ storage }).single('gif');
 
+// set up swagger-ui-express for live api documentation
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./docs/openapi.json');
+
 /*
 setting up cors to allow access to our api
 by clients from a different host
@@ -34,6 +38,8 @@ app.use(bodyParser.json());
 // support urlencoded body
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// set up api live documentation
+app.use('/teamwork/v1/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // admin login
 app.post('/teamwork/v1/admin/login', db.adminLogin);
