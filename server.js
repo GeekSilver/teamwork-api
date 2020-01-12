@@ -8,10 +8,10 @@ dotenv.config();
 const app = require('./app');
 
 // set the port in our app
-app.set('port', process.env.API_PORT);
+app.set('port', process.env.API_PORT || 80);
 
 // create an http server instance
 const server = http.createServer(app);
 
 // start listening for requests wtth our server
-server.listen(process.env.API_PORT);
+server.listen(process.env.API_PORT || 80);
