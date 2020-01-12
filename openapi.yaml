@@ -1,0 +1,532 @@
+openapi: "3.0.0"
+info:
+  description: "This is the backend part of teamwork app. Teamwork is an internal company app that is aimed at promoting bonding between employees. This api is aimed at facilitating:\n 
+  - Admin Sign In.\n
+  - Creation of employees account by admin.\n
+  - Employee Sign In.\n
+  - Creation of articles by an employee.\n
+  - Retrieval of articles by an employee.\n
+  - Editing of articles by an employee.\n
+  - Employee posting comments on articles.\n
+  - Employee to view all articles.\n
+  - Employee to view a specific article.\n
+  - Deletion of an employee's articles by an employee.\n
+  - Creation of gifs by an employee.\n
+  - Employee to view all gifs.\n
+  - Employee to view a specific gif.\n
+  - Deletion of an employee's gifs by the employee.\n
+  - Employee posting comments on gifs.\n
+  - Catch All requests that don't match any endpoint.\n"
+  version: 1.0.0
+  title: Teamwork
+  contact:
+    email: erickioko995@gmail.com
+  license:
+    name: MIT
+    url: https://github.com/GeekSilver/teamwork-api/blob/master/LICENSE
+servers:
+  - url: https://teamwork-rest-api.herokuapp.com/teamwork/v1
+paths:
+  /admin/login:
+    post:
+      summary: Authenticates the admin.
+      requestBody:
+        $ref: '#/components/requestBodies/AdminLoginCredentials'
+        
+      responses:
+        '200':
+          $ref: '#/components/responses/200Login'
+        '500':
+          $ref: '#/components/responses/500Error'
+  /admin/employees:
+    post:
+      parameters:
+      - $ref: '#/components/parameters/Authorization'
+      summary: admin creates an employee
+      requestBody:
+        description: employee credentials
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: 
+                  type: string
+                  example: Joan Baez
+                email:
+                  type: string
+                  example: baez54@musix.cu
+                password:
+                  type: string
+                  example: hti5soo$
+      responses:
+        '200':
+          $ref: '#/components/responses/200Create'
+        '500':
+          $ref: '#/components/responses/500Error'
+  /employees/login:
+    post:
+      summary: Authenticate an employee.
+      requestBody:
+        description: employee credentials.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginCredentials'
+      responses:
+        '200':
+          $ref: '#/components/responses/200Login'
+        '500':
+          $ref: '#/components/responses/500Error'
+
+  /articles:
+    post:
+      summary: create a new article.
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+      requestBody:
+        $ref: '#/components/requestBodies/Article'              
+      responses:
+        '200':
+          description: successful creation of an article.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: article added successfully.
+        '500':
+          $ref: '#/components/responses/500Error'
+    get:
+      summary: view articles.
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+      responses:
+        '200':
+          description: an array of articles.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Articles'
+        '500':
+          $ref: '#/components/responses/500Error'
+      
+  /articles/{id}:
+    put:
+      summary: edit article.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+            example: 1
+          required: true
+          description: numeric id of the article to edit.
+        - $ref: '#/components/parameters/Authorization'
+      requestBody:
+        description: an article
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleWithId'
+      responses:
+        '200':
+          description: success message.
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '500':
+          description: An Exception.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: view specific article.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+            example: 1
+          required: true
+        - $ref: '#/components/parameters/Authorization'
+      responses:
+        '200':
+          description: An article.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+        '500':
+          $ref: '#/components/responses/500Error'
+    delete:
+      summary: delete a specific article
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          $ref: '#/components/responses/200Create'
+        '500':
+          $ref: '#/components/responses/500Error'
+  /articles/{id}/comments:
+    post:
+      summary: comment on an article.
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        $ref: '#/components/requestBodies/Comment'     
+      responses:
+        '200':
+          $ref: '#/components/responses/200Create'
+        '500':
+          $ref: '#/components/responses/500Error'
+  /gifs:
+    post:
+      summary: add a gif
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+      requestBody:
+        description: the gif and employees id
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                id: 
+                  type: integer
+                  example: 1
+                gif:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: success message.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: gif added successfully
+                      public_id:
+                        type: string
+                        example: ajdoihJ!Djic98lse3dhoklh
+        '500':
+          $ref: '#/components/responses/500Error'
+    get:
+      summary: view all gifs
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+      responses:
+        '200':
+          description: an array of urls for gifs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data: 
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Gif'
+        '500':
+          $ref: '#/components/responses/500Error'
+  /gifs/{id}:
+    delete:
+      summary: delete a specific gif.
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          $ref: '#/components/responses/200Create'
+        '500':
+          $ref: '#/components/responses/500Error'
+    get:
+      summary: view a specific gif
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: an object containing gifs url.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/Gif'
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+  /gifs/:id/comments:
+    post:
+      summary: comment on a gif
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        $ref: '#/components/requestBodies/Comment'
+      responses:
+        '200':
+          $ref: '#/components/responses/200Create'
+        '500': 
+          $ref: '#/components/responses/500Error'
+  /feed:
+    get:
+      summary: view gifs and articles
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: an array of gifs and articles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: 
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      anyOf:
+                      - $ref: '#/components/schemas/Gif'
+                      - $ref: '#/components/schemas/Article'                    
+                      
+        '500':
+          $ref: '#/components/responses/500Error'
+  /*:
+    post:
+      summary: catch post requests that don't match any endpoint
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          $ref: '#/components/responses/200WildRequest'
+        '500':
+          $ref: '#/components/responses/500Error'
+    get:
+      summary: catch get requests that don't match any endpoint.
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          $ref: '#/components/responses/200WildRequest'
+        '500':
+          $ref: '#/components/responses/500Error'
+             
+                
+
+
+components:
+  requestBodies:
+    Article:
+      description: an article.
+      required: true
+      content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/Article' 
+              type: object
+              properties:
+                id:
+                  type: integer
+                  example: 1
+    AdminLoginCredentials:
+      description: Admin credentials.
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LoginCredentials'
+    Comment:
+      description: a comment and its owners id.
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Comment'
+
+  schemas:
+    Gif:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        employee_id:
+          type: integer
+          example: 2
+        created_at:
+          type: string
+          format: timestamp
+          example: '2020-01-04 18:42:46.970284'
+        url:
+          type: string
+          format: url
+          example: https://res.cloudinary.com/cloudname/image/upload/v1574790921/yqmwy1usik8mn.jpg
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        comment:
+          type: string
+          example: this is so truee!
+    LoginCredentials:
+      type: object
+      required: 
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          example: johndoe@xyz.com
+        password:
+          type: string
+          example: asHAJUBK99A!
+    AuthenticationResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbXBsb3llZ
+    Error:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        error:
+          type: string
+          example: invalid details.
+    Article:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Its Raining Cats n Dogs.
+        body:
+          type: string
+          example: Bring me coffee, Anyone. There's a surprise in for it.
+        category:
+          type: string
+          example: horror
+    Articles:
+      type: array
+      items:
+        $ref: '#/components/schemas/Article'
+    SuccessMessage:
+      type: object
+      properties:
+        status: 
+          type: string
+          example: success
+        data:
+          type: object
+          properties:
+            message:
+              type: object
+              example: Request Successful.
+    ArticleWithId:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Its Raining Cats n Dogs.
+        body:
+          type: string
+          example: Bring me coffee, Anyone. There's a surprise in for it.
+        category:
+          type: string
+          example: horror
+        id:
+          type: integer
+          example: 1
+  parameters:
+    Authorization:
+      in: header
+      name: Authorization
+      required: true
+      schema:
+        type: string
+        example: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbXBsb3llZ
+    Id:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+        example: 1
+
+  responses:
+    200WildRequest:
+      description: successs message.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: success
+              data:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Your request did not match any path in the api'
+    200Create:
+      description: Success Message.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SuccessMessage'
+    200Login:
+      description: A token.
+      content: 
+        application/json: 
+          schema:
+            $ref: '#/components/schemas/AuthenticationResponse'
+    500Error:
+      description: An Exception.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
