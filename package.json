@@ -32,7 +32,7 @@
     "request": "^2.88.0"
   },
   "scripts": {
-    "start": "web:node server",
+    "start": "node server",
     "test": "nyc --reporter=lcov jasmine && nyc report --reporter=text-lcov | coveralls"
   },
   "keywords": [],
