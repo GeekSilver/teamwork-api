@@ -3,4 +3,4 @@
 [![Test Coverage](https://api.codeclimate.com/v1/badges/7e358d1b734d88264633/test_coverage)](https://codeclimate.com/github/GeekSilver/teamwork-api/test_coverage)
 [![Maintainability](https://api.codeclimate.com/v1/badges/7e358d1b734d88264633/maintainability)](https://codeclimate.com/github/GeekSilver/teamwork-api/maintainability)
 
-This is the backend part of teamwork app. Coming Soon...
+This is the backend part of teamwork app.  Visit the [Interactive Documentation for the api](https://teamwork-rest-api.herokuapp.com/teamwork/v1/api-docs/).
