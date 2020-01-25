@@ -8,10 +8,6 @@ const app = express();
 
 // endpoint queries
 const multer = require('multer');
-const db = require('./queries');
-
-// verify employee Authentication
-const employeeAuth = require('./auth.employee');
 
 // configure & instantiate multer
 const storage = multer.memoryStorage();
@@ -20,6 +16,13 @@ const multerGifHandling = multer({ storage }).single('gif');
 // set up swagger-ui-express for live api documentation
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./docs/openapi.json');
+
+// verify employee & admin Authentication
+const auth = require('./auth');
+const authHeader = require('./auth.header');
+
+// controllers
+const db = require('./queries');
 
 /*
 setting up cors to allow access to our api
@@ -45,52 +48,58 @@ app.use('/teamwork/v1/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocumen
 app.post('/teamwork/v1/admin/login', db.adminLogin);
 
 // admin create employee
-app.post('/teamwork/v1/admin/employees', db.adminCreateEmployee);
+app.post('/teamwork/v1/admin/employees', auth, db.adminCreateEmployee);
 
 // employee sign in
 app.post('/teamwork/v1/employees/login', db.employeeLogin);
 
 // employee post article
-app.post('/teamwork/v1/articles', employeeAuth, db.employeePostArticle);
+app.post('/teamwork/v1/articles', auth, db.employeePostArticle);
 
 // employee edit article
-app.put('/teamwork/v1/articles/:id', employeeAuth, db.employeeEditArticle);
+app.put('/teamwork/v1/articles/:id', auth, db.employeeEditArticle);
 
 // employee delete article
-app.delete('/teamwork/v1/articles/:id', employeeAuth, db.employeeDeleteArticle);
+app.delete('/teamwork/v1/articles/:id', authHeader, db.employeeDeleteArticle);
 
 // employee comments on article
-app.post('/teamwork/v1/articles/:id/comments', employeeAuth, db.employeeCommentsOnArticle);
+app.post('/teamwork/v1/articles/:id/comments', auth, db.employeeCommentsOnArticle);
+
+// employee view comments on article
+app.get('/teamwork/v1/articles/:id/comments', db.employeeViewAllCommentsOfAnArticle);
 
 // employee view all articles
-app.get('/teamwork/v1/articles', employeeAuth, db.employeeCanViewAllArticles);
+app.get('/teamwork/v1/articles', db.employeeCanViewAllArticles);
 
 // employee view a specific article
-app.get('/teamwork/v1/articles/:id', employeeAuth, db.employeeCanViewSpecificArticle);
+app.get('/teamwork/v1/articles/:id', db.employeeCanViewSpecificArticle);
 
 // employee post gif
-app.post('/teamwork/v1/gifs', multerGifHandling, employeeAuth, db.employeeUploadGif);
+app.post('/teamwork/v1/gifs', multerGifHandling, auth, db.employeeUploadGif);
 
 // employee delete a gif
-app.delete('/teamwork/v1/gifs/:id', employeeAuth, db.employeeDeleteGif);
+app.delete('/teamwork/v1/gifs/:id', authHeader, db.employeeDeleteGif);
 
 // employee comments on gif
-app.post('/teamwork/v1/gifs/:id/comments', employeeAuth, db.employeeCommentGif);
+app.post('/teamwork/v1/gifs/:id/comments', auth, db.employeeCommentGif);
+
+// employee view comments on gif
+app.get('/teamwork/v1/gifs/:id/comments', db.employeeViewAllCommentsOfGif);
 
 // employee view all gifs
-app.get('/teamwork/v1/gifs', employeeAuth, db.employeeViewAllGifs);
+app.get('/teamwork/v1/gifs', db.employeeViewAllGifs);
 
 // employee view a specific gif
-app.get('/teamwork/v1/gifs/:id', employeeAuth, db.employeeViewSpecificGif);
+app.get('/teamwork/v1/gifs/:id', db.employeeViewSpecificGif);
 
 // employee view feed
-app.get('/teamwork/v1/feed', employeeAuth, db.employeeViewFeed);
+app.get('/teamwork/v1/feed', db.employeeViewFeed);
 
 // catch wild (don't match any endpoint) POST requests
-app.post('/teamwork/v1/*', employeeAuth, db.getWildRequests);
+app.post('/teamwork/v1/*', auth, db.getWildRequests);
 
 // catch wild (don't match any endpoint) GET requests
-app.get('/teamwork/v1/*', employeeAuth, db.getWildRequests);
+app.get('/teamwork/v1/*', db.getWildRequests);
 
 // export the app
 module.exports = app;

@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "description": "This is the backend part of teamwork app. Teamwork is an internal company app that is aimed at promoting bonding between employees. This api is aimed at facilitating:\n  - Admin Sign In.\n - Creation of employees account by admin.\n - Employee Sign In.\n - Creation of articles by an employee.\n - Retrieval of articles by an employee.\n - Editing of articles by an employee.\n - Employee posting comments on articles.\n - Employee to view all articles.\n - Employee to view a specific article.\n - Deletion of an employee's articles by an employee.\n - Creation of gifs by an employee.\n - Employee to view all gifs.\n - Employee to view a specific gif.\n - Deletion of an employee's gifs by the employee.\n - Employee posting comments on gifs.\n - Catch All requests that don't match any endpoint.\n",
+    "description": "This is the backend part of teamwork app. Teamwork is an internal company app that is aimed at promoting bonding between employees. This api is aimed at facilitating:\n  - Admin Sign In.\n - Creation of employees account by admin.\n - Employee Sign In.\n - Creation of articles by an employee.\n - Retrieval of articles by an employee.\n - Editing of articles by an employee.\n - Employee posting comments on articles.\n - Employee viewing all comments on an article.\n - Employee to view all articles.\n - Employee to view a specific article.\n - Deletion of an employee's articles by an employee.\n - Creation of gifs by an employee.\n - Employee to view all gifs.\n - Employee to view a specific gif.\n - Deletion of an employee's gifs by the employee.\n - Employee posting comments on gifs.\n - Employee viewing all comments on a gif.\n - Catch All requests that don't match any endpoint.\n",
     "version": "1.0.0",
     "title": "Teamwork",
     "contact": {
@@ -14,7 +14,7 @@
   },
   "servers": [
     {
-      "url": "https://teamwork-rest-api.herokuapp.com/teamwork/v1"
+      "url": "http://127.0.0.1:3000/teamwork/v1"
     }
   ],
   "paths": {
@@ -22,7 +22,25 @@
       "post": {
         "summary": "Authenticates the admin.",
         "requestBody": {
-          "$ref": "#/components/requestBodies/AdminLoginCredentials"
+          "description": "admins credentials.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "postgres@test.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "password"
+                  }
+                }
+              }
+            }
+          }
         },
         "responses": {
           "200": {
@@ -36,9 +54,9 @@
     },
     "/admin/employees": {
       "post": {
-        "parameters": [
+        "security": [
           {
-            "$ref": "#/components/parameters/Authorization"
+            "Authorization": []
           }
         ],
         "summary": "admin creates an employee",
@@ -50,17 +68,22 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "id": {
+                    "description": "this is the admins id and its always 1",
+                    "type": "integer",
+                    "example": 1
+                  },
                   "name": {
                     "type": "string",
-                    "example": "Joan Baez"
+                    "example": "Carlos Vela"
                   },
                   "email": {
                     "type": "string",
-                    "example": "baez54@musix.cu"
+                    "example": "vela@la.com"
                   },
                   "password": {
                     "type": "string",
-                    "example": "hti5soo$"
+                    "example": "password"
                   }
                 }
               }
@@ -104,9 +127,9 @@
     "/articles": {
       "post": {
         "summary": "create a new article.",
-        "parameters": [
+        "security": [
           {
-            "$ref": "#/components/parameters/Authorization"
+            "Authorization": []
           }
         ],
         "requestBody": {
@@ -145,9 +168,9 @@
       },
       "get": {
         "summary": "view articles.",
-        "parameters": [
+        "security": [
           {
-            "$ref": "#/components/parameters/Authorization"
+            "Authorization": []
           }
         ],
         "responses": {
@@ -180,9 +203,11 @@
             },
             "required": true,
             "description": "numeric id of the article to edit."
-          },
+          }
+        ],
+        "security": [
           {
-            "$ref": "#/components/parameters/Authorization"
+            "Authorization": []
           }
         ],
         "requestBody": {
@@ -230,9 +255,11 @@
               "example": 1
             },
             "required": true
-          },
+          }
+        ],
+        "security": [
           {
-            "$ref": "#/components/parameters/Authorization"
+            "Authorization": []
           }
         ],
         "responses": {
@@ -253,9 +280,21 @@
       },
       "delete": {
         "summary": "delete a specific article",
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
         "parameters": [
           {
-            "$ref": "#/components/parameters/Authorization"
+            "in": "header",
+            "description": "custom header containing employee id obtainied after login",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 391
+            }
           },
           {
             "$ref": "#/components/parameters/Id"
@@ -274,10 +313,12 @@
     "/articles/{id}/comments": {
       "post": {
         "summary": "comment on an article.",
-        "parameters": [
+        "security": [
           {
-            "$ref": "#/components/parameters/Authorization"
-          },
+            "Authorization": []
+          }
+        ],
+        "parameters": [
           {
             "$ref": "#/components/parameters/Id"
           }
@@ -293,14 +334,30 @@
             "$ref": "#/components/responses/500Error"
           }
         }
+      },
+      "get": {
+        "summary": "view all comments of an article",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/200ArticleComments"
+          },
+          "500": {
+            "$ref": "#/components/responses/500Error"
+          }
+        }
       }
     },
     "/gifs": {
       "post": {
         "summary": "add a gif",
-        "parameters": [
+        "security": [
           {
-            "$ref": "#/components/parameters/Authorization"
+            "Authorization": []
           }
         ],
         "requestBody": {
@@ -360,9 +417,9 @@
       },
       "get": {
         "summary": "view all gifs",
-        "parameters": [
+        "security": [
           {
-            "$ref": "#/components/parameters/Authorization"
+            "Authorization": []
           }
         ],
         "responses": {
@@ -397,9 +454,21 @@
     "/gifs/{id}": {
       "delete": {
         "summary": "delete a specific gif.",
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
         "parameters": [
           {
-            "$ref": "#/components/parameters/Authorization"
+            "in": "header",
+            "description": "custom header containing employee id obtainied after login",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 391
+            }
           },
           {
             "$ref": "#/components/parameters/Id"
@@ -416,10 +485,12 @@
       },
       "get": {
         "summary": "view a specific gif",
-        "parameters": [
+        "security": [
           {
-            "$ref": "#/components/parameters/Authorization"
-          },
+            "Authorization": []
+          }
+        ],
+        "parameters": [
           {
             "$ref": "#/components/parameters/Id"
           }
@@ -449,13 +520,15 @@
         }
       }
     },
-    "/gifs/:id/comments": {
+    "/gifs/{id}/comments": {
       "post": {
         "summary": "comment on a gif",
-        "parameters": [
+        "security": [
           {
-            "$ref": "#/components/parameters/Authorization"
-          },
+            "Authorization": []
+          }
+        ],
+        "parameters": [
           {
             "$ref": "#/components/parameters/Id"
           }
@@ -471,17 +544,30 @@
             "$ref": "#/components/responses/500Error"
           }
         }
+      },
+      "get": {
+        "summary": "view all comments of a gif",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/200GifComments"
+          },
+          "500": {
+            "$ref": "#/components/responses/500Error"
+          }
+        }
       }
     },
     "/feed": {
       "get": {
         "summary": "view gifs and articles",
-        "parameters": [
+        "security": [
           {
-            "$ref": "#/components/parameters/Authorization"
-          },
-          {
-            "$ref": "#/components/parameters/Id"
+            "Authorization": []
           }
         ],
         "responses": {
@@ -523,14 +609,28 @@
     "/*": {
       "post": {
         "summary": "catch post requests that don't match any endpoint",
-        "parameters": [
+        "security": [
           {
-            "$ref": "#/components/parameters/Authorization"
-          },
-          {
-            "$ref": "#/components/parameters/Id"
+            "Authorization": []
           }
         ],
+        "requestBody": {
+          "description": "json containing id of employee issued upon successful login",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "example": 1245
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "$ref": "#/components/responses/200WildRequest"
@@ -542,12 +642,9 @@
       },
       "get": {
         "summary": "catch get requests that don't match any endpoint.",
-        "parameters": [
+        "security": [
           {
-            "$ref": "#/components/parameters/Authorization"
-          },
-          {
-            "$ref": "#/components/parameters/Id"
+            "Authorization": []
           }
         ],
         "responses": {
@@ -577,6 +674,7 @@
               "type": "object",
               "properties": {
                 "id": {
+                  "description": "employee id",
                   "type": "integer",
                   "example": 1
                 }
@@ -645,6 +743,58 @@
           }
         }
       },
+      "ArticleCommentObject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 59
+          },
+          "article_id": {
+            "type": "integer",
+            "example": 530
+          },
+          "employee_id": {
+            "type": "integer",
+            "example": 1456
+          },
+          "created_at": {
+            "type": "string",
+            "format": "datetime",
+            "example": "2020-01-24T07:32:07.366Z"
+          },
+          "comment": {
+            "type": "string",
+            "example": "this is so truee!"
+          }
+        }
+      },
+      "GifCommentObject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 13
+          },
+          "gif_id": {
+            "type": "integer",
+            "example": 148
+          },
+          "employee_id": {
+            "type": "integer",
+            "example": 1496
+          },
+          "created_at": {
+            "type": "string",
+            "format": "datetime",
+            "example": "2020-01-24T17:44:16.878Z"
+          },
+          "comment": {
+            "type": "string",
+            "example": "this is unreal!"
+          }
+        }
+      },
       "LoginCredentials": {
         "type": "object",
         "required": [
@@ -654,11 +804,11 @@
         "properties": {
           "email": {
             "type": "string",
-            "example": "johndoe@xyz.com"
+            "example": "stinson@himym.com"
           },
           "password": {
             "type": "string",
-            "example": "asHAJUBK99A!"
+            "example": "password"
           }
         }
       },
@@ -693,11 +843,11 @@
         "properties": {
           "title": {
             "type": "string",
-            "example": "Its Raining Cats n Dogs."
+            "example": "Wash your hands after using js!."
           },
           "body": {
             "type": "string",
-            "example": "Bring me coffee, Anyone. There's a surprise in for it."
+            "example": ":) just kidding. Lol."
           },
           "category": {
             "type": "string",
@@ -738,7 +888,7 @@
           },
           "body": {
             "type": "string",
-            "example": "Bring me coffee, Anyone. There's a surprise in for it."
+            "example": "Bring me coffee, Anyone. There's a free ticket to Avengers for it."
           },
           "category": {
             "type": "string",
@@ -751,16 +901,14 @@
         }
       }
     },
-    "parameters": {
+    "securitySchemes": {
       "Authorization": {
-        "in": "header",
-        "name": "Authorization",
-        "required": true,
-        "schema": {
-          "type": "string",
-          "example": "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbXBsb3llZ"
-        }
-      },
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "parameters": {
       "Id": {
         "in": "path",
         "name": "id",
@@ -823,6 +971,32 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "200ArticleComments": {
+        "description": "An array containing objects with comments",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ArticleCommentObject"
+              }
+            }
+          }
+        }
+      },
+      "200GifComments": {
+        "description": "An array containing objects with comments",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/GifCommentObject"
+              }
             }
           }
         }

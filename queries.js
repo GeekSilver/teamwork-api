@@ -62,7 +62,7 @@ const adminLogin = (req, res) => {
         // if password match
         if (match) {
           // sign token
-          const token = jwt.sign({ adminId: result.rows[0].id }, 'SECRET', { expiresIn: '24h' });
+          const token = jwt.sign({ id: result.rows[0].id }, 'SECRET', { expiresIn: '24h' });
           // respond with success status and a token
           return res.status(200).send({
             status: 'success',
@@ -78,7 +78,7 @@ const adminLogin = (req, res) => {
 // admin create employee
 const adminCreateEmployee = (req, res) => {
   // validate req details
-  if (req.body.email !== 'undefined' && req.body.name !== 'undefined' && req.body.password !== 'undefined') {
+  if (req.body.id !== 'undefined' && req.body.email !== 'undefined' && req.body.name !== 'undefined' && req.body.password !== 'undefined') {
     bcrypt.hash(req.body.password, 10, (error, hash) => {
       // handle error
       queryError(error, 500, res);
@@ -119,11 +119,12 @@ const employeeLogin = (req, res) => {
             });
           }
           // sign jw token
-          const token = jwt.sign({ employeeId: result.rows[0].id }, 'SECRET', { expiresIn: '24h' });
+          const token = jwt.sign({ id: result.rows[0].id }, 'SECRET', { expiresIn: '24h' });
 
           return res.status(200).send({
             status: 'success',
             data: token,
+            id: result.rows[0].id,
           });
         },
       ).catch((error1) => res.status(500).send({
@@ -142,8 +143,12 @@ const employeePostArticle = (req, res) => {
   if (req.body.id !== 'undefined' && req.body.title !== 'undefined' && req.body.body !== 'undefined' && req.body.category !== 'undefined') {
     pool.query('INSERT INTO articles (employee_id, title, body, category) VALUES ($1,$2,$3,$4)',
       [req.body.id, req.body.title, req.body.body, req.body.category], (error) => {
-        queryError(error, 401, res);
-
+        if (error) {
+          return res.status(500).json({
+            status: 'error',
+            error,
+          });
+        }
         return res.status(200).send({
           status: 'success',
           data: {
@@ -164,32 +169,32 @@ const employeeEditArticle = (req, res) => {
     // error handling
     queryError(error, 500, res);
     id = result.rows[0].employee_id;
-  });
-
-  if (id && id !== req.body.id) {
-    return res.status(419).send({
-      status: 'error',
-      error: 'unathorized to edit this article',
-    });
-  }
-  // validate data
-  if (req.body.title !== 'undefined' && req.body.body !== 'undefined' && req.body.category !== 'undefined') {
-    pool.query('UPDATE articles SET title=$1, body=$2, category=$3 WHERE id=$4', [req.body.title,
-      req.body.body, req.body.category, req.params.id], (error) => {
-      // error handling
-      queryError(error, 500, res);
-
-      return res.status(200).send({
-        status: 'success',
-        data: {
-          message: 'article updated successfully',
-          id: req.params.id,
-        },
+    // confirm ownership of article
+    if (id && +id !== +req.body.id) {
+      return res.status(419).send({
+        status: 'error',
+        error: 'unauthorized to edit this article',
       });
-    });
-  } else {
-    queryError('invalid details', 200, res);
-  }
+    }
+    // validate data
+    if (req.body.title !== 'undefined' && req.body.body !== 'undefined' && req.body.category !== 'undefined') {
+      pool.query('UPDATE articles SET title=$1, body=$2, category=$3 WHERE id=$4', [req.body.title,
+        req.body.body, req.body.category, req.params.id], (error) => {
+        // error handling
+        queryError(error, 500, res);
+
+        return res.status(200).send({
+          status: 'success',
+          data: {
+            message: 'article updated successfully',
+            id: req.params.id,
+          },
+        });
+      });
+    } else {
+      queryError('invalid details', 200, res);
+    }
+  });
 };
 
 // employee delete article
@@ -200,25 +205,23 @@ const employeeDeleteArticle = (req, res) => {
     // error handling
     queryError(error, 500, res);
     id = result.rows[0].employee_id;
-  });
-
-  if (id && id !== req.body.id) {
-    return res.status(419).send({
-      status: 'error',
-      error: 'unathorized to delete this article',
-    });
-  }
-
-  pool.query('DELETE FROM articles WHERE id=$1', [req.params.id], (error) => {
-    // error handling
-    queryError(error, 500, res);
-
-    return res.status(200).send({
-      status: 'success',
-      data: {
-        message: 'article deleted successfully',
-        id: 1,
-      },
+    // confirm ownership
+    if (id && +id !== +req.headers.id) {
+      return res.status(419).send({
+        status: 'error',
+        error: 'unathorized to delete this article',
+      });
+    }
+    pool.query('DELETE FROM articles WHERE id=$1', [req.params.id], (error1) => {
+      // error handling
+      queryError(error1, 500, res);
+      return res.status(200).send({
+        status: 'success',
+        data: {
+          message: 'article deleted successfully',
+          id: 1,
+        },
+      });
     });
   });
 };
@@ -243,6 +246,19 @@ const employeeCommentsOnArticle = (req, res) => {
     queryError('invalid details', 200, res);
   }
 };
+
+// employee can view all comments of an article
+const employeeViewAllCommentsOfAnArticle = (req, res) => {
+  pool.query('SELECT * FROM comments ORDER BY created_at DESC', (error, result) => {
+    // handle error
+    queryError(error, 500, res);
+    return res.status(200).send({
+      status: 'success',
+      data: result.rows,
+    });
+  });
+};
+
 
 // employee can view all articles
 const employeeCanViewAllArticles = (req, res) => {
@@ -301,15 +317,28 @@ const employeeUploadGif = (req, res) => {
 
 // employee delete gif
 const employeeDeleteGif = (req, res) => {
-  pool.query('DELETE FROM gifs WHERE id=$1', [req.params.id], (error) => {
+  let id;
+  pool.query('SELECT employee_id FROM gifs WHERE id = $1', [req.params.id], (error, result) => {
     // handle error
     queryError(error, 500, res);
+    id = result.rows[0].employee_id;
+    // confirm ownership
+    if (id && +id !== +req.headers.id) {
+      return res.status(419).send({
+        status: 'error',
+        error: 'unathorized to delete this gif',
+      });
+    }
+    pool.query('DELETE FROM gifs WHERE id=$1', [req.params.id], (error) => {
+      // handle error
+      queryError(error, 500, res);
 
-    return res.status(200).send({
-      status: 'success',
-      data: {
-        message: 'gif deleted successfully',
-      },
+      return res.status(200).send({
+        status: 'success',
+        data: {
+          message: 'gif deleted successfully',
+        },
+      });
     });
   });
 };
@@ -333,6 +362,18 @@ const employeeCommentGif = (req, res) => {
   } else {
     queryError('invalid details', 200, res);
   }
+};
+
+// employee can view all comments of a gif
+const employeeViewAllCommentsOfGif = (req, res) => {
+  pool.query('SELECT * FROM gif_comments ORDER BY created_at DESC', (error, result) => {
+    // handle error
+    queryError(error, 500, res);
+    return res.status(200).send({
+      status: 'success',
+      data: result.rows,
+    });
+  });
 };
 
 // employee can view all gifs
@@ -421,4 +462,6 @@ module.exports = {
   employeeViewFeed,
   getWildRequests,
   postWildRequests,
+  employeeViewAllCommentsOfGif,
+  employeeViewAllCommentsOfAnArticle,
 };
