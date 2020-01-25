@@ -25,7 +25,7 @@ info:
     email: erickioko995@gmail.com
   license:
     name: MIT
-    url: http://github.com/GeekSilver/teamwork-api/blob/master/LICENSE
+    url: https://github.com/GeekSilver/teamwork-api/blob/master/LICENSE
 servers:
   - url: https://teamwork-rest-api.herokuapp.com/teamwork/v1
 paths:
