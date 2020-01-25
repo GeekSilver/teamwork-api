@@ -203,7 +203,7 @@ paths:
           required: true
           schema:
             type: integer
-            example: 391
+            example: 9
         - $ref: '#/components/parameters/Id'
       responses:
         '200':
@@ -247,7 +247,7 @@ paths:
               properties:
                 id: 
                   type: integer
-                  example: 1
+                  example: 9
                 gif:
                   type: string
                   format: binary
@@ -306,7 +306,7 @@ paths:
           required: true
           schema:
             type: integer
-            example: 391
+            example: 9
         - $ref: '#/components/parameters/Id'
       responses:
         '200':
@@ -395,7 +395,7 @@ paths:
               properties:
                 id: 
                   type: integer
-                  example: 1245
+                  example: 9
       responses:
         '200':
           $ref: '#/components/responses/200WildRequest'
@@ -429,7 +429,7 @@ components:
                 id:
                   description: employee id
                   type: integer
-                  example: 1
+                  example: 9
     AdminLoginCredentials:
       description: Admin credentials.
       required: true
@@ -468,7 +468,7 @@ components:
       properties:
         id:
           type: integer
-          example: 1
+          example: 9
         comment:
           type: string
           example: this is so truee!
@@ -582,7 +582,7 @@ components:
           example: horror
         id:
           type: integer
-          example: 1
+          example: 9
   securitySchemes:
      Authorization:
       type: http

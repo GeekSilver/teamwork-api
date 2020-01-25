@@ -9,7 +9,7 @@
     },
     "license": {
       "name": "MIT",
-      "url": "http://github.com/GeekSilver/teamwork-api/blob/master/LICENSE"
+      "url": "https://github.com/GeekSilver/teamwork-api/blob/master/LICENSE"
     }
   },
   "servers": [
@@ -293,7 +293,7 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "example": 391
+              "example": 9
             }
           },
           {
@@ -369,7 +369,7 @@
                 "properties": {
                   "id": {
                     "type": "integer",
-                    "example": 1
+                    "example": 9
                   },
                   "gif": {
                     "type": "string",
@@ -467,7 +467,7 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "example": 391
+              "example": 9
             }
           },
           {
@@ -624,7 +624,7 @@
                 "properties": {
                   "id": {
                     "type": "integer",
-                    "example": 1245
+                    "example": 9
                   }
                 }
               }
@@ -676,7 +676,7 @@
                 "id": {
                   "description": "employee id",
                   "type": "integer",
-                  "example": 1
+                  "example": 9
                 }
               }
             }
@@ -735,7 +735,7 @@
         "properties": {
           "id": {
             "type": "integer",
-            "example": 1
+            "example": 9
           },
           "comment": {
             "type": "string",
@@ -896,7 +896,7 @@
           },
           "id": {
             "type": "integer",
-            "example": 1
+            "example": 9
           }
         }
       }
