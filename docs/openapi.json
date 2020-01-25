@@ -14,7 +14,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:3000/teamwork/v1"
+      "url": "https://teamwork-rest-api.herokuapp.com/teamwork/v1"
     }
   ],
   "paths": {
