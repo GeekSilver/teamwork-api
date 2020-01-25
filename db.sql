@@ -63,7 +63,7 @@ ALTER SEQUENCE public.admin_id_seq OWNED BY public.admin.id;
 CREATE TABLE public.articles (
     id integer NOT NULL,
     employee_id integer NOT NULL,
-    title character varying(30) NOT NULL,
+    title text NOT NULL,
     body text NOT NULL,
     category text NOT NULL,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP

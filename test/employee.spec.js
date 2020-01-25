@@ -87,7 +87,7 @@ const globals = [
 const resetGlobals = (vars) => {
   vars.forEach(
     // eslint-disable-next-line no-unused-vars
-    (variable) => {
+    (_variable) => {
       // eslint-disable-next-line no-param-reassign
       variable = undefined;
     },
@@ -206,23 +206,26 @@ describe('Employee', () => {
     });
   });
 
+  // an article gets created
+  // eslint-disable-next-line no-undef
+  it('can post articles', () => {
+    expect(postArticleStatus).toEqual('success');
+  });
+
   // destroy created employee
   afterAll((done) => {
     // reset globals
     resetGlobals(globals);
     // delete article & employee
-    delEmployeeAndReferences(employeeDetails.email, 'articles', () => {
-      server.close(() => {
-        done();
+    pool.query('DELETE FROM articles WHERE employee_id = $1', [employeeId], (error) => {
+      handleError(error);
+      pool.query('DELETE FROM employees WHERE id = $1', [employeeId], (error1) => {
+        handleError(error1);
+        server.close(() => {
+          done();
+        });
       });
     });
-  });
-
-
-  // an article gets created
-  // eslint-disable-next-line no-undef
-  it('can post articles', () => {
-    expect(postArticleStatus).toEqual('success');
   });
 });
 
@@ -325,6 +328,7 @@ describe('Employee', () => {
                 uri: `${url}/articles/${articleId}`,
                 headers: {
                   Authorization: `bearer ${empToken}`,
+                  id: employeeId,
                 },
                 form: {
                   id: employeeId,
@@ -488,7 +492,7 @@ describe('Employee', () => {
               form: {
                 id: employeeId,
               },
-            }, (error1, _response1, body1) => {
+            }, (_error1, _response1, body1) => {
               viewAllArticlesStatus = parseToJson(body1).status;
               done();
             });
@@ -705,6 +709,7 @@ describe('Employeee', () => {
                     uri: `${url}/gifs/${gifId}`,
                     headers: {
                       Authorization: `bearer ${empToken}`,
+                      id: employeeId,
                     },
                     form: {
                       id: employeeId,
@@ -986,7 +991,7 @@ describe('Employee', () => {
                     },
                   }, (error2, _response1, body1) => {
                     // handle errror
-                    handleError(error1);
+                    handleError(error2);
                     viewSpecificGifStatus = parseToJson(body1).status;
                     done();
                   });
@@ -1123,5 +1128,185 @@ describe('Employee', () => {
         });
       });
     });
+  });
+});
+
+// test employee can view a specific article comments
+describe('Employee', () => {
+  let articleId;
+  let viewAnArticlesCommentsStatus;
+  beforeAll((done) => {
+    // start server
+    server.listen(process.env.API_PORT, () => {
+    // given an authenticated employee and a comment
+      createAndAuthenticateEmployee(employeeDetails, (empToken) => {
+      // create an article
+        request.post({
+          uri: `${url}/articles/`,
+          headers: {
+            Authorization: `Bearer ${empToken}`,
+          },
+          form: {
+            id: employeeId,
+            ...articleDetails,
+          },
+        }, (error) => {
+          handleError(error);
+          // attempt to comment on the post
+          pool.query('SELECT id FROM articles WHERE employee_id = $1', [employeeId], (error1, result) => {
+            handleError(error1);
+            articleId = result.rows[0].id;
+            request.post({
+              uri: `${url}/articles/${articleId}/comments`,
+              headers: {
+                Authorization: `Bearer ${empToken}`,
+              },
+              form: {
+                id: employeeId,
+                comment: 'This is just a comment',
+              },
+            }, (error2) => {
+              handleError(error2);
+              // attempt to view comments
+              request.get({
+                uri: `${url}/articles/${articleId}/comments`,
+              }, (error3, _response2, body2) => {
+                handleError(error3);
+                viewAnArticlesCommentsStatus = parseToJson(body2).status;
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+
+  // when the employee hits the endpoint GET /articles/:id/comments
+  it('can view a specific articles commments', () => {
+    expect(viewAnArticlesCommentsStatus).toEqual('success');
+  });
+  // then they see all comments of the article
+  afterAll((done) => {
+  // delete comment
+    pool.query('DELETE FROM comments WHERE article_id = $1', [articleId],
+      (error) => {
+        handleError(error);
+        // delete article and employee
+        pool.query('DELETE FROM articles WHERE employee_id = $1', [employeeId], (error1) => {
+          handleError(error1);
+          pool.query('DELETE FROM employees WHERE id = $1', [employeeId], (error2) => {
+            handleError(error2);
+            resetGlobals(globals);
+            server.close(() => {
+              done();
+            });
+          });
+        });
+      });
+  });
+});
+
+// test employee can view a specific gif comments
+describe('Employee', () => {
+  let viewAGifsCommentsStatus;
+  let gif;
+  let gifId;
+  let gifPublicId;
+
+  // given an employee & articles
+  beforeAll((done) => {
+    // start server
+    server.listen(process.env.API_PORT, () => {
+      // given an authenticated employee & a gif & a comment
+      createAndAuthenticateEmployee(employeeDetails, (empToken) => {
+        const gifUrl = faker.image.avatar();
+        // write the gif in fs
+        const writeStream = fs.createWriteStream('gif.png');
+        request(gifUrl).pipe(writeStream);
+        writeStream.on('finish', () => {
+          gif = fs.createReadStream('gif.png');
+          gif.on('open', () => {
+            // post the gif
+            request.post({
+              url: `${url}/gifs`,
+              formData: {
+                id: employeeId,
+                gif,
+              },
+              headers: {
+                Authorization: `bearer ${empToken}`,
+              },
+            }, (error, _response, body) => {
+              handleError(error);
+              const bodyJson = JSON.parse(body);
+              // cloudinary file public_id
+              gifPublicId = bodyJson.data.public_id;
+              // get the gif id from db
+              pool.query('SELECT id FROM gifs WHERE employee_id = $1', [employeeId],
+                (error1, result) => {
+                  // handle error1
+                  handleError(error1);
+                  gifId = result.rows[0].id;
+                  // post comment
+                  request.post({
+                    uri: `${url}/gifs/${gifId}/comments`,
+                    headers: {
+                      Authorization: `bearer ${empToken}`,
+                    },
+                    form: {
+                      id: employeeId,
+                      comment: 'This a gif comment',
+                    },
+                  }, (error2) => {
+                    // handle errror
+                    handleError(error2);
+                    done();
+                  });
+                });
+            });
+          });
+        });
+      });
+    });
+  });
+
+  beforeEach((done) => {
+    // when the employee hits the endpoint GET /gifs/:id/comments
+    request.get({
+      uri: `${url}/gifs/${gifId}/comments`,
+    }, (error3, _response2, body2) => {
+      handleError(error3);
+      viewAGifsCommentsStatus = parseToJson(body2).status;
+      done();
+    });
+  });
+  // then they view the specific gif
+  it('can view a specific gif comments', () => {
+    expect(viewAGifsCommentsStatus).toEqual('success');
+  });
+
+  // clean up db after test
+  afterAll((done) => {
+    // delete the gifs comment
+    pool.query('DELETE FROM gif_comments WHERE gif_id = $1', [gifId],
+      (error) => {
+        handleError(error);
+        // delete gif & the employee
+        delEmployeeAndReferences(employeeDetails.email, 'gifs', () => {
+          // delete gif from local storage
+          fs.unlink('gif.png', () => {
+            // delete gif from cloudinary
+            cloudinary.v2.uploader.destroy(gifPublicId, () => {
+              // close server
+              server.close(() => {
+                done();
+              });
+            });
+          });
+        });
+        // reset globals
+        resetGlobals(globals);
+      });
   });
 });

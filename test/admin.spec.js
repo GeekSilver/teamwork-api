@@ -112,7 +112,10 @@ describe('Admin ', () => {
         Authorization: `bearer ${token}`,
       },
       uri: `${url}/admin/employees`,
-      form: employeeDetails,
+      form: {
+        id: 1, // admin id is always 1 since there is only one admin in admin table
+        ...employeeDetails,
+      },
     }, (error, response, body) => {
       handleError(error);
 
