@@ -99,6 +99,45 @@ const createAndAuthenticateEmployee = (detailsObject, callback) => {
   });
 };
 
+// test api can get employees
+describe('API', () => {
+  let getEmployeesStatus;
+  beforeAll((done) => {
+    // start server
+    server.listen(process.env.API_PORT, () => {
+      // given an employee
+      createAndAuthenticateEmployee(employeeDetails, () => {
+        // when a client hits the endpoint GET /employees/:id
+        request.get({
+          uri: `${url}/employees/${employeeId}`,
+        }, (error, _response, body) => {
+          handleError(error);
+          getEmployeesStatus = parseToJson(body).status;
+          done();
+        });
+      });
+    });
+  });
+
+  // then they get a json object with an employee details
+  it('can get a specific employee', () => {
+    expect(getEmployeesStatus).toEqual('success');
+  });
+
+  // clean up db
+  afterAll((done) => {
+    pool.query('DELETE FROM employees WHERE id = $1', [employeeId],
+      (error) => {
+        handleError(error);
+        resetGlobals(globals);
+        // close server
+        server.close(() => {
+          done();
+        });
+      });
+  });
+});
+
 // test api can handle wild GET requests
 describe('API', () => {
   let getWildRequestStatus;
@@ -126,7 +165,7 @@ describe('API', () => {
     });
   });
 
-  // then the get a message that there request didn't match any endpoint
+  // then they get a message that there request didn't match any endpoint
   it('can handle wild GET requests', () => {
     expect(getWildRequestStatus).toEqual('success');
   });

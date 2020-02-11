@@ -83,6 +83,42 @@ paths:
           $ref: '#/components/responses/200Create'
         '500':
           $ref: '#/components/responses/500Error'
+  /employees/{id}:
+    get: 
+      summary: fetch a specific employees details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: id of the employee
+          schema:
+            type: integer
+            example: 34
+      responses:
+        '200':
+          description: successful fetch of an employee
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  status: 
+                    type: string
+                    example: success
+                  data: 
+                      type: object
+                      properties:
+                        id: 
+                          type: integer
+                          example: 424
+                        name: 
+                          type: string
+                          example: Harry Kim
+                        email: 
+                          type: string
+                          example: AliSiddiq@cc.com                              
+        '500':
+          $ref: '#/components/responses/500Error'
   /employees/login:
     post:
       summary: Authenticate an employee.

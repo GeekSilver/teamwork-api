@@ -102,6 +102,19 @@ const adminCreateEmployee = (req, res) => {
   }
 };
 
+// client fetch specific employee
+const getSpecificEmployee = (req, res) => {
+  pool.query('SELECT id, name, email FROM employees WHERE id = $1', [req.params.id],
+    (error, result) => {
+    // handle error
+      queryError(error, 500, res);
+      return res.status(200).json({
+        status: 'success',
+        data: result.rows[0],
+      });
+    });
+};
+
 // employee login
 const employeeLogin = (req, res) => {
   // validate data
@@ -425,28 +438,25 @@ const employeeViewFeed = (req, res) => {
 };
 
 // catch any wild(don't match any endpoint) GET requests
-const getWildRequests = (req, res) => {
-  return res.status(200).json({
-    status: 'success',
-    data: {
-      message: 'Your request did not match any path in the api',
-    },
-  });
-};
+const getWildRequests = (req, res) => res.status(200).json({
+  status: 'success',
+  data: {
+    message: 'Your request did not match any path in the api',
+  },
+});
 
 // catch any wild(don't match any endpoint) POST requests
-const postWildRequests = (req, res) => {
-  return res.status(200).json({
-    status: 'success',
-    data: {
-      message: 'Your request did not match any path in the api',
-    },
-  });
-};
+const postWildRequests = (req, res) => res.status(200).json({
+  status: 'success',
+  data: {
+    message: 'Your request did not match any path in the api',
+  },
+});
 
 module.exports = {
   adminLogin,
   adminCreateEmployee,
+  getSpecificEmployee,
   employeeLogin,
   employeePostArticle,
   employeeEditArticle,

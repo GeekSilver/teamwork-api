@@ -44,6 +44,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // set up api live documentation
 app.use('/teamwork/v1/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
+// get specific employee
+app.get('/teamwork/v1/employees/:id', db.getSpecificEmployee);
+
 // admin login
 app.post('/teamwork/v1/admin/login', db.adminLogin);
 
