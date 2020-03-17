@@ -53,7 +53,7 @@ const adminLogin = (req, res) => {
   // retrieve the req details
   pool.query('SELECT password,id FROM admin WHERE email = $1', [req.body.email],
     (error, result) => {
-    // handle error
+      // handle error
       queryError(error, 500, res);
       // compare password
       bcrypt.compare(req.body.password, result.rows[0].password, (error1, match) => {
@@ -106,7 +106,7 @@ const adminCreateEmployee = (req, res) => {
 const getSpecificEmployee = (req, res) => {
   pool.query('SELECT id, name, email FROM employees WHERE id = $1', [req.params.id],
     (error, result) => {
-    // handle error
+      // handle error
       queryError(error, 500, res);
       return res.status(200).json({
         status: 'success',
@@ -119,7 +119,7 @@ const getSpecificEmployee = (req, res) => {
 const employeeLogin = (req, res) => {
   // validate data
   if (req.body.email !== 'undefined' && req.body.password !== 'undefined') {
-    pool.query('SELECT password,id FROM employees WHERE email = $1', [req.body.email], (error, result) => {
+    pool.query('SELECT password,id,name FROM employees WHERE email = $1', [req.body.email], (error, result) => {
       // error handling
       queryError(error, 500, res);
       // if user exists
@@ -140,6 +140,7 @@ const employeeLogin = (req, res) => {
               status: 'success',
               data: token,
               id: result.rows[0].id,
+              userName: result.rows[0].name,
             });
           },
         ).catch((error1) => res.status(500).send({
@@ -253,7 +254,7 @@ const employeeCommentsOnArticle = (req, res) => {
   if (req.body.id !== 'undefined' && req.body.comment !== 'undefined') {
     pool.query('INSERT INTO comments (article_id, employee_id, comment) VALUES ($1,$2,$3)',
       [req.params.id, req.body.id, req.body.comment], (error) => {
-      // handle query error
+        // handle query error
         queryError(error, 500, res);
         return res.status(200).send({
           status: 'success',
@@ -283,20 +284,38 @@ const employeeViewAllCommentsOfAnArticle = (req, res) => {
 
 // employee can view all articles
 const employeeCanViewAllArticles = (req, res) => {
-  pool.query('SELECT * FROM articles ORDER BY created_at DESC', (error, result) => {
-    // handle query error
-    queryError(error, 500, res);
-    if (result.length <= 0) {
+  const offset = req.params.page === 1 ? 0 : 5 * (req.params.page - 1);
+  if (req.params.page) {
+    pool.query(`SELECT * FROM articles ORDER BY created_at DESC LIMIT 5 OFFSET ${offset}`, (error, result) => {
+      // handle query error
+      queryError(error, 500, res);
+      if (result.length <= 0) {
+        return res.status(200).send({
+          status: 'success',
+          data: 'no articles',
+        });
+      }
       return res.status(200).send({
         status: 'success',
-        data: 'no articles',
+        data: result.rows,
       });
-    }
-    return res.status(200).send({
-      status: 'success',
-      data: result.rows,
     });
-  });
+  } else {
+    pool.query('SELECT * FROM articles ORDER BY created_at DESC ', (error, result) => {
+      // handle query error
+      queryError(error, 500, res);
+      if (result.length <= 0) {
+        return res.status(200).send({
+          status: 'success',
+          data: 'no articles',
+        });
+      }
+      return res.status(200).send({
+        status: 'success',
+        data: result.rows,
+      });
+    });
+  }
 };
 
 // employee can view a specific article
@@ -370,7 +389,7 @@ const employeeCommentGif = (req, res) => {
   if (req.body.id !== 'undefined' && req.body.comment !== 'undefined') {
     pool.query('INSERT INTO gif_comments (gif_id, employee_id, comment) VALUES($1,$2,$3)',
       [req.params.id, req.body.id, req.body.comment], (error) => {
-      // handle error
+        // handle error
         queryError(error, 500, res);
 
         return res.status(200).send({
@@ -399,15 +418,28 @@ const employeeViewAllCommentsOfGif = (req, res) => {
 
 // employee can view all gifs
 const employeeViewAllGifs = (req, res) => {
-  pool.query('SELECT * FROM gifs ORDER BY created_at DESC', (error, result) => {
-    // handle error
-    queryError(error, 500, res);
+  const offset = req.params.page === 1 ? 0 : 5 * (req.params.page - 1);
+  if (req.params.page) {
+    pool.query(`SELECT * FROM gifs ORDER BY created_at DESC LIMIT 5 OFFSET ${offset}`, (error, result) => {
+      // handle error
+      queryError(error, 500, res);
 
-    return res.status(200).send({
-      status: 'success',
-      data: result.rows,
+      return res.status(200).send({
+        status: 'success',
+        data: result.rows,
+      });
     });
-  });
+  } else {
+    pool.query('SELECT * FROM gifs ORDER BY created_at DESC', (error, result) => {
+      // handle error
+      queryError(error, 500, res);
+
+      return res.status(200).send({
+        status: 'success',
+        data: result.rows,
+      });
+    });
+  }
 };
 
 // employee view specific gif
@@ -425,24 +457,46 @@ const employeeViewSpecificGif = (req, res) => {
 
 // employee view feed i.e both gifs & articles
 const employeeViewFeed = (req, res) => {
+  const offset = req.params.page === 1 ? 0 : 2 * (req.params.page - 1);
+
   let feed;
-  // query all gifs
-  pool.query('SELECT * FROM gifs', (error1, result1) => {
-    // handle error
-    queryError(error1, 500, res);
-    const gifs = result1.rows;
-    // query all articles
-    pool.query('SELECT * FROM articles', (error2, result2) => {
+  if (req.params.page) {
+    // query all gifs
+    pool.query(`SELECT * FROM gifs ORDER BY created_at DESC  LIMIT 2 OFFSET ${offset}`, (error1, result1) => {
       // handle error
-      queryError(error2, 500, res);
-      const articles = result2.rows;
-      feed = gifs.concat(articles);
-      return res.status(200).send({
-        status: 'success',
-        data: feed,
+      queryError(error1, 500, res);
+      const gifs = result1.rows;
+      // query all articles
+      pool.query(`SELECT * FROM articles ORDER BY created_at DESC  LIMIT 2 OFFSET ${offset} `, (error2, result2) => {
+        // handle error
+        queryError(error2, 500, res);
+        const articles = result2.rows;
+        feed = gifs.concat(articles);
+        return res.status(200).send({
+          status: 'success',
+          data: feed,
+        });
       });
     });
-  });
+  } else {
+    // query all gifs
+    pool.query('SELECT * FROM gifs ORDER BY created_at DESC ', (error1, result1) => {
+      // handle error
+      queryError(error1, 500, res);
+      const gifs = result1.rows;
+      // query all articles
+      pool.query('SELECT * FROM articles ORDER BY created_at DESC ', (error2, result2) => {
+        // handle error
+        queryError(error2, 500, res);
+        const articles = result2.rows;
+        feed = gifs.concat(articles);
+        return res.status(200).send({
+          status: 'success',
+          data: feed,
+        });
+      });
+    });
+  }
 };
 
 // catch any wild(don't match any endpoint) GET requests

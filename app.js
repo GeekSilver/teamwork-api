@@ -72,7 +72,7 @@ app.post('/teamwork/v1/articles/:id/comments', auth, db.employeeCommentsOnArticl
 app.get('/teamwork/v1/articles/:id/comments', db.employeeViewAllCommentsOfAnArticle);
 
 // employee view all articles
-app.get('/teamwork/v1/articles', db.employeeCanViewAllArticles);
+app.get('/teamwork/v1/articles/:page?', db.employeeCanViewAllArticles);
 
 // employee view a specific article
 app.get('/teamwork/v1/articles/:id', db.employeeCanViewSpecificArticle);
@@ -90,13 +90,13 @@ app.post('/teamwork/v1/gifs/:id/comments', auth, db.employeeCommentGif);
 app.get('/teamwork/v1/gifs/:id/comments', db.employeeViewAllCommentsOfGif);
 
 // employee view all gifs
-app.get('/teamwork/v1/gifs', db.employeeViewAllGifs);
+app.get('/teamwork/v1/gifs/:page?', db.employeeViewAllGifs);
 
 // employee view a specific gif
 app.get('/teamwork/v1/gifs/:id', db.employeeViewSpecificGif);
 
 // employee view feed
-app.get('/teamwork/v1/feed', db.employeeViewFeed);
+app.get('/teamwork/v1/feed/:page?', db.employeeViewFeed);
 
 // catch wild (don't match any endpoint) POST requests
 app.post('/teamwork/v1/*', auth, db.getWildRequests);
