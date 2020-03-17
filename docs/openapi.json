@@ -228,6 +228,18 @@
             "Authorization": []
           }
         ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            },
+            "required": false,
+            "description": "optional query parameter to paginate results"
+          }
+        ],
         "responses": {
           "200": {
             "description": "an array of articles.",
@@ -477,6 +489,18 @@
             "Authorization": []
           }
         ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            },
+            "required": false,
+            "description": "optional query parameter to paginate results"
+          }
+        ],
         "responses": {
           "200": {
             "description": "an array of urls for gifs",
@@ -623,6 +647,18 @@
         "security": [
           {
             "Authorization": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            },
+            "required": false,
+            "description": "optional query parameter to paginate results"
           }
         ],
         "responses": {
