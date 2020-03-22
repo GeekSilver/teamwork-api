@@ -27,8 +27,8 @@ before_script:
   - ./cc-test-reporter before-build
   - PGPASSWORD='' psql -c "CREATE DATABASE teamwork;" -U postgres -h localhost -p 5433
   - PGPASSWORD='' psql -c "CREATE USER root PASSWORD 'password' ;" -U postgres  -h localhost -p 5433
-  - PGPASSWORD=password psql -d teamwork -f db.sql -U root -h localhost
-  - PGPASSWORD=password psql -c "INSERT INTO admin (email, password) VALUES ('postgres@test.com', '$ADMIN_PASSWORD_HASH');" -U root -d teamwork -h localhost
+  - PGPASSWORD=password psql -d teamwork -f db.sql -U root -h localhost -p 5433
+  - PGPASSWORD=password psql -c "INSERT INTO admin (email, password) VALUES ('postgres@test.com', '$ADMIN_PASSWORD_HASH');" -U root -d teamwork -h localhost -p 5433
 
 after_script:
   - ./cc-test-reporter after-build
