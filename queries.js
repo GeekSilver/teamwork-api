@@ -284,8 +284,8 @@ const employeeViewAllCommentsOfAnArticle = (req, res) => {
 
 // employee can view all articles
 const employeeCanViewAllArticles = (req, res) => {
-  const offset = req.query.page === 1 ? 0 : 5 * (req.query.page - 1);
   if (req.query.page) {
+    const offset = req.query.page === 1 ? 0 : 5 * (req.query.page - 1);
     pool.query(`SELECT * FROM articles ORDER BY created_at DESC LIMIT 5 OFFSET ${offset}`, (error, result) => {
       // handle query error
       queryError(error, 500, res);
@@ -418,8 +418,8 @@ const employeeViewAllCommentsOfGif = (req, res) => {
 
 // employee can view all gifs
 const employeeViewAllGifs = (req, res) => {
-  const offset = req.query.page === 1 ? 0 : 5 * (req.query.page - 1);
   if (req.query.page) {
+    const offset = req.query.page === 1 ? 0 : 5 * (req.query.page - 1);
     pool.query(`SELECT * FROM gifs ORDER BY created_at DESC LIMIT 5 OFFSET ${offset}`, (error, result) => {
       // handle error
       queryError(error, 500, res);
@@ -457,10 +457,9 @@ const employeeViewSpecificGif = (req, res) => {
 
 // employee view feed i.e both gifs & articles
 const employeeViewFeed = (req, res) => {
-  const offset = req.query.page === 1 ? 0 : 2 * (req.query.page - 1);
-
   let feed;
   if (req.query.page) {
+    const offset = req.query.page === 1 ? 0 : 2 * (req.query.page - 1);
     // query all gifs
     pool.query(`SELECT * FROM gifs ORDER BY created_at DESC  LIMIT 2 OFFSET ${offset}`, (error1, result1) => {
       // handle error
